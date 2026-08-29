@@ -24,23 +24,34 @@ def init_db():
             reasoning TEXT NOT NULL,
             manipulation_techniques TEXT NOT NULL,
             sources TEXT NOT NULL,
+            forensics TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    try:
+        cursor.execute("ALTER TABLE scans ADD COLUMN forensics TEXT")
+    except Exception:
+        pass
     conn.commit()
     conn.close()
 
-def save_scan(input_type, input_content, language, verdict, confidence_score, reasoning, manipulation_techniques, sources):
+def save_scan(input_type, input_content, language, verdict, confidence_score, reasoning, manipulation_techniques, sources, forensics=None):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Store JSON strings for lists
+    try:
+        cursor.execute("ALTER TABLE scans ADD COLUMN forensics TEXT")
+    except Exception:
+        pass
+    
+    # Store JSON strings for lists & dicts
     tech_json = json.dumps(manipulation_techniques) if isinstance(manipulation_techniques, list) else manipulation_techniques
     sources_json = json.dumps(sources) if isinstance(sources, list) else sources
+    forensics_json = json.dumps(forensics) if forensics else None
     
     cursor.execute('''
-        INSERT INTO scans (input_type, input_content, language, verdict, confidence_score, reasoning, manipulation_techniques, sources, timestamp)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO scans (input_type, input_content, language, verdict, confidence_score, reasoning, manipulation_techniques, sources, forensics, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         input_type,
         input_content,
@@ -50,6 +61,7 @@ def save_scan(input_type, input_content, language, verdict, confidence_score, re
         reasoning,
         tech_json,
         sources_json,
+        forensics_json,
         datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     ))
     scan_id = cursor.lastrowid
@@ -77,6 +89,12 @@ def get_scans():
         except Exception:
             item['sources'] = []
             
+        if 'forensics' in item and item['forensics']:
+            try:
+                item['forensics'] = json.loads(item['forensics'])
+            except Exception:
+                item['forensics'] = None
+            
         result.append(item)
     return result
 
@@ -100,6 +118,12 @@ def get_scan(scan_id):
         item['sources'] = json.loads(item['sources'])
     except Exception:
         item['sources'] = []
+        
+    if 'forensics' in item and item['forensics']:
+        try:
+            item['forensics'] = json.loads(item['forensics'])
+        except Exception:
+            item['forensics'] = None
         
     return item
 

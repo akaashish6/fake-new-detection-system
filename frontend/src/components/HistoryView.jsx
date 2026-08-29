@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Trash2, Calendar, FileText, Link, Image as ImageIcon, ExternalLink, X, AlertCircle } from 'lucide-react';
+import { Search, Trash2, Calendar, FileText, Link, Image as ImageIcon, Mic, ExternalLink, X, AlertCircle } from 'lucide-react';
 import ReportCard from './ReportCard';
 
 export default function HistoryView() {
@@ -80,6 +80,8 @@ export default function HistoryView() {
         return <Link size={14} />;
       case 'image':
         return <ImageIcon size={14} />;
+      case 'audio':
+        return <Mic size={14} />;
       default:
         return <FileText size={14} />;
     }

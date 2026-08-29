@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 import database
 import gemini_service
+import image_forensics
 
 # Load environment variables
 load_dotenv()
@@ -56,11 +57,33 @@ def check_claim():
                 return jsonify({'success': False, 'error': 'No image file selected.'}), 400
             image_bytes = file.read()
             content = f"Image screenshot ({file.filename})"
+            
+        elif input_type == 'audio':
+            if 'audio' not in request.files:
+                return jsonify({'success': False, 'error': 'No audio voice file uploaded or recorded.'}), 400
+            file = request.files['audio']
+            if file.filename == '':
+                return jsonify({'success': False, 'error': 'No audio file selected.'}), 400
+            audio_bytes = file.read()
+            audio_mime_type = file.mimetype or 'audio/mp3'
+            content = f"Audio Voice Note ({file.filename or 'Recorded Audio'})"
         else:
             return jsonify({'success': False, 'error': 'Invalid input type specified.'}), 400
             
-        # Call Gemini Fact-checking service
-        result = gemini_service.analyze_claim(input_type, content, image_bytes)
+        # Call Fact-checking service
+        result = gemini_service.analyze_claim(
+            input_type,
+            content,
+            image_bytes=image_bytes,
+            audio_bytes=audio_bytes if input_type == 'audio' else None,
+            audio_mime_type=audio_mime_type if input_type == 'audio' else None
+        )
+        
+        # If image, perform deep Error Level Analysis (ELA) and manipulation heatmap
+        forensics_data = None
+        if input_type == 'image' and image_bytes:
+            forensics_data = image_forensics.perform_forensic_ela(image_bytes)
+            result['forensics'] = forensics_data
         
         # Save scan result to SQLite Database
         scan_id = database.save_scan(
@@ -71,7 +94,8 @@ def check_claim():
             confidence_score=result.get('confidence_score', 0),
             reasoning=result.get('reasoning', ''),
             manipulation_techniques=result.get('manipulation_techniques', []),
-            sources=result.get('sources', [])
+            sources=result.get('sources', []),
+            forensics=forensics_data
         )
         
         return jsonify({

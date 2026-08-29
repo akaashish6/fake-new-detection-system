@@ -98,15 +98,17 @@ def parse_json_response(raw_text):
                 pass
         raise ValueError(f"Failed to parse structured JSON from model output: {raw_text[:200]}...")
 
-def analyze_claim(input_type, content, image_bytes=None):
+def analyze_claim(input_type, content, image_bytes=None, audio_bytes=None, audio_mime_type=None):
     """
     Main fact-checking routine using Gemini API with Search Grounding tool.
+    Supports text, URL scraping, image screenshots, and audio voice notes.
     """
     client = get_client()
     
     # 1. Prepare input content & language context
     extracted_text = ""
     pil_image = None
+    audio_part = None
     
     if input_type == 'url':
         extracted_text = extract_text_from_url(content)
@@ -116,6 +118,24 @@ def analyze_claim(input_type, content, image_bytes=None):
             raise ValueError("No image provided for image analysis.")
         pil_image = Image.open(io.BytesIO(image_bytes))
         claim_context = "Analyze the text, claim, post, or news screenshot in this image for truthfulness and authenticity."
+    elif input_type == 'audio':
+        if not audio_bytes:
+            raise ValueError("No audio voice note data provided for analysis.")
+        mime = audio_mime_type or "audio/mp3"
+        if "webm" in mime:
+            mime = "audio/webm"
+        elif "wav" in mime:
+            mime = "audio/wav"
+        elif "ogg" in mime or "opus" in mime:
+            mime = "audio/ogg"
+        elif "mp4" in mime or "m4a" in mime:
+            mime = "audio/mp4"
+        elif "aac" in mime:
+            mime = "audio/aac"
+        else:
+            mime = "audio/mp3"
+        audio_part = types.Part.from_bytes(data=audio_bytes, mime_type=mime)
+        claim_context = "Listen to this audio voice note / spoken message carefully. Transcribe and verify the spoken claim for truthfulness, detecting viral WhatsApp rumors, fake government policies, or scaremongering."
     else:  # text
         extracted_text = content
         claim_context = f"Analyze the credibility of the following claim / news story:\n\"{content}\""
@@ -125,15 +145,15 @@ def analyze_claim(input_type, content, image_bytes=None):
     # 2. Construct Fact-Checking System Prompt
     system_instruction = (
         "You are an expert, unbiased AI Fact-Checker specializing in global news, digital rumors, social media claims, "
-        "and regional Indian context (including Hindi, Hinglish, viral WhatsApp messages, fake government notices, and clickbait).\n"
-        "Your task is to thoroughly verify the provided claim/image/link using web search grounding and critical logical reasoning.\n\n"
+        "and regional Indian context (including Hindi, Hinglish, viral WhatsApp audio voice notes, fake government notices, and clickbait).\n"
+        "Your task is to thoroughly verify the provided claim/image/link/audio message using web search grounding and critical logical reasoning.\n\n"
         "RULES FOR YOUR RESPONSE:\n"
         "1. You MUST respond with ONLY a valid, raw JSON object (no markdown intro or extra commentary).\n"
         "2. Verdict MUST be one of: \"Real\", \"Fake\", \"Misleading\", \"Unverifiable\".\n"
         "3. Confidence score MUST be an integer between 0 and 100.\n"
         "4. Language detected MUST be one of: \"English\", \"Hindi\", \"Hinglish\", or appropriate language.\n"
-        "5. Reasoning MUST be concise (2-4 sentences) explaining the fact check, background context, and truth status in clear, objective terms.\n"
-        "6. Manipulation techniques MUST be a list of tags (0 to 4 max) if present (e.g., [\"Emotional Language\", \"False Urgency\", \"Fabricated Quote\", \"Out of Context Claim\", \"Manipulated Image\", \"Misleading Headline\"]). If none found, return an empty list [].\n"
+        "5. Reasoning MUST be concise (2-4 sentences) explaining the fact check, background context, and truth status in clear, objective terms. If audio was provided, briefly mention what was spoken in the voice message.\n"
+        "6. Manipulation techniques MUST be a list of tags (0 to 4 max) if present (e.g., [\"Emotional Language\", \"False Urgency\", \"Fabricated Quote\", \"Out of Context Claim\", \"Manipulated Image\", \"Voice Note Rumor\"]). If none found, return an empty list [].\n"
         "7. Sources MUST be a list of 1 to 4 credible source objects used for verification: [{\"title\": \"Source Name / Fact Check Title\", \"url\": \"https://...\"}]. If specific sources aren't available, provide domain recommendations.\n\n"
         "JSON SCHEMA SPECIFICATION:\n"
         "{\n"
@@ -148,12 +168,14 @@ def analyze_claim(input_type, content, image_bytes=None):
     
     user_prompt = f"FACT-CHECK REQUEST ({input_type.upper()}):\n{claim_context}\n\nDetected Primary Language Context: {detected_lang}.\n"
     if detected_lang in ['Hindi', 'Hinglish']:
-        user_prompt += "Note: The claim is in Hindi/Hinglish. Please understand the cultural context, local idioms, and viral rumors, but provide clear reasoning in English or easy Hinglish for the user.\n"
+        user_prompt += "Note: The claim/audio may be in Hindi/Hinglish. Please understand the cultural context, local idioms, and viral rumors, but provide clear reasoning in English or easy Hinglish for the user.\n"
     
-    # 3. Call Gemini API
+    # 3. Call Model API
     contents = []
     if pil_image:
         contents.append(pil_image)
+    if audio_part:
+        contents.append(audio_part)
     contents.append(user_prompt)
     
     # List active, supported models in order of priority
