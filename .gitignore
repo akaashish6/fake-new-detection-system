@@ -1,0 +1,22 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local Database
+*.db
+scans.db
+
+# Environment variables & secrets
+.env
+
+# Node & Frontend build
+node_modules/
+frontend/node_modules/
+dist/
+.DS_Store
+
+# IDE & Editor files
+.vscode/
+.idea/
