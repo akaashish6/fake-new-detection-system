@@ -18,8 +18,11 @@ else:
 
 CORS(app)  # Enable Cross-Origin Resource Sharing for React frontend
 
-@app.route('/')
-def serve_index():
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_frontend(path):
+    if path != "" and os.path.exists(os.path.join(FRONTEND_DIST, path)):
+        return send_from_directory(FRONTEND_DIST, path)
     if os.path.exists(os.path.join(FRONTEND_DIST, 'index.html')):
         return send_from_directory(FRONTEND_DIST, 'index.html')
     return jsonify({
