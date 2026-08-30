@@ -41,8 +41,8 @@ export default function Header({ activeTab, setActiveTab }) {
             History
           </button>
           <button
-            className="nav-link"
-            onClick={() => scrollToSection('how-it-works')}
+            className={`nav-link ${activeTab === 'about' ? 'active' : ''}`}
+            onClick={() => setActiveTab('about')}
           >
             About
           </button>

@@ -4,6 +4,7 @@ import InputForm from './components/InputForm';
 import LoadingCard from './components/LoadingCard';
 import ReportCard from './components/ReportCard';
 import HistoryView from './components/HistoryView';
+import AboutView from './components/AboutView';
 import { AlertCircle, ShieldCheck, Target, Globe, Zap, FileText, Cpu, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function App() {
@@ -296,8 +297,10 @@ export default function App() {
               <ReportCard data={scanResult} onReset={handleReset} />
             )}
           </>
-        ) : (
+        ) : activeTab === 'history' ? (
           <HistoryView />
+        ) : (
+          <AboutView onStartScan={() => setActiveTab('scan')} />
         )}
       </main>
     </div>
