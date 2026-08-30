@@ -263,7 +263,7 @@ export default function HistoryView() {
                   reasoning: selectedScan.reasoning,
                   manipulation_techniques: selectedScan.manipulation_techniques,
                   sources: selectedScan.sources,
-                  claim_text: selectedScan.input_content
+                  claim_text: selectedScan.claim_text || selectedScan.input_content
                 }}
                 onReset={() => setSelectedScan(null)}
               />

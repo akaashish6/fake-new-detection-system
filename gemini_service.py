@@ -152,11 +152,13 @@ def analyze_claim(input_type, content, image_bytes=None, audio_bytes=None, audio
         "2. Verdict MUST be one of: \"Real\", \"Fake\", \"Misleading\", \"Unverifiable\".\n"
         "3. Confidence score MUST be an integer between 0 and 100.\n"
         "4. Language detected MUST be one of: \"English\", \"Hindi\", \"Hinglish\", or appropriate language.\n"
-        "5. Reasoning MUST be concise (2-4 sentences) explaining the fact check, background context, and truth status in clear, objective terms. If audio was provided, briefly mention what was spoken in the voice message.\n"
-        "6. Manipulation techniques MUST be a list of tags (0 to 4 max) if present (e.g., [\"Emotional Language\", \"False Urgency\", \"Fabricated Quote\", \"Out of Context Claim\", \"Manipulated Image\", \"Voice Note Rumor\"]). If none found, return an empty list [].\n"
-        "7. Sources MUST be a list of 1 to 4 credible source objects used for verification: [{\"title\": \"Source Name / Fact Check Title\", \"url\": \"https://...\"}]. If specific sources aren't available, provide domain recommendations.\n\n"
+        "5. Claim text MUST be a concise summary or transcription (1-2 sentences) of the exact claim being reviewed. For audio or image inputs, transcribe or state what was spoken/shown (e.g. 'Muffled/unclear audio clip with no clear actionable claim' or 'Viral audio claim regarding...').\n"
+        "6. Reasoning MUST be concise (2-4 sentences) explaining the fact check, background context, and truth status in clear, objective terms. If audio was provided, briefly mention what was spoken in the voice message.\n"
+        "7. Manipulation techniques MUST be a list of tags (0 to 4 max) if present (e.g., [\"Emotional Language\", \"False Urgency\", \"Fabricated Quote\", \"Out of Context Claim\", \"Manipulated Image\", \"Voice Note Rumor\"]). If none found, return an empty list [].\n"
+        "8. Sources MUST be a list of 1 to 4 credible source objects used for verification: [{\"title\": \"Source Name / Fact Check Title\", \"url\": \"https://...\"}]. If specific sources aren't available, provide domain recommendations.\n\n"
         "JSON SCHEMA SPECIFICATION:\n"
         "{\n"
+        '  "claim_text": "Concise summary or transcription of the claim under review",\n'
         '  "verdict": "Real | Fake | Misleading | Unverifiable",\n'
         '  "confidence_score": 90,\n'
         '  "language_detected": "English | Hindi | Hinglish",\n'
@@ -267,7 +269,19 @@ def analyze_claim(input_type, content, image_bytes=None, audio_bytes=None, audio
     except (ValueError, TypeError):
         confidence = 75
         
+    claim_text = parsed.get('claim_text', '').strip()
+    if not claim_text:
+        if input_type == 'audio':
+            claim_text = f"Audio Voice Note ({content})"
+        elif input_type == 'image':
+            claim_text = f"Screenshot Media Content ({content})"
+        elif input_type == 'url':
+            claim_text = f"News Article URL: {content}"
+        else:
+            claim_text = content
+
     result = {
+        'claim_text': claim_text,
         'verdict': verdict,
         'confidence_score': confidence,
         'language_detected': parsed.get('language_detected', detected_lang),

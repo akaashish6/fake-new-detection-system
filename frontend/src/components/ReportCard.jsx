@@ -108,21 +108,14 @@ export default function ReportCard({ data, onReset }) {
   const [forensicMode, setForensicMode] = useState('heatmap');
   const [showAllSources, setShowAllSources] = useState(false);
 
-  const {
-    verdict = 'Fake',
-    confidence_score = 100,
-    language_detected = 'English',
-    reasoning = 'There is no official announcement from the Government of India or any authorized telecom operator regarding a free 3-month 5G recharge scheme. PIB and multiple credible sources have confirmed this as a phishing attempt.',
-    manipulation_techniques = [
-      { title: 'Fabricated Quote', desc: 'Fake or invented statements' },
-      { title: 'False Urgency', desc: 'Creates panic or unreal urgency' },
-      { title: 'Emotional Manipulation', desc: 'Uses emotion to influence users' },
-      { title: 'Sensationalism', desc: 'Exaggerated or misleading claims' }
-    ],
-    claim_text = 'The claim that Prime Minister Narendra Modi has announced a free 3-month 5G recharge scheme for all Indian users is completely false. This is a recurring viral phishing scam designed to steal personal information and drive traffic to fraudulent websites.',
-    sources = [],
-    forensics = null
-  } = data;
+  const verdict = data?.verdict || 'Unverifiable';
+  const confidence_score = data?.confidence_score ?? 50;
+  const language_detected = data?.language_detected || 'English';
+  const reasoning = data?.reasoning || 'Fact check analysis completed based on available references.';
+  const manipulation_techniques = data?.manipulation_techniques || [];
+  const claim_text = data?.claim_text || data?.input_content || 'Claim details unavailable for this scan.';
+  const sources = data?.sources || [];
+  const forensics = data?.forensics || null;
 
   useEffect(() => {
     if (verdict === 'Real') {

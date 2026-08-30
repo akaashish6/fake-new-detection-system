@@ -95,7 +95,8 @@ def check_claim():
             reasoning=result.get('reasoning', ''),
             manipulation_techniques=result.get('manipulation_techniques', []),
             sources=result.get('sources', []),
-            forensics=forensics_data
+            forensics=forensics_data,
+            claim_text=result.get('claim_text')
         )
         
         return jsonify({
