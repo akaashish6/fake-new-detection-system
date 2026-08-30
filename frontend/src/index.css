@@ -171,17 +171,17 @@ h1, h2, h3, h4, h5, h6 {
     inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.45) !important;
 }
 
-/* Header */
+/* Header (Ultra-Transparent 3D Frosted Glass) */
 .app-header {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(6, 10, 19, 0.88);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(6, 10, 22, 0.28) 100%) !important;
+  backdrop-filter: blur(28px) saturate(210%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(210%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
   padding: 1.1rem 2.5rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .header-container {
@@ -1460,12 +1460,19 @@ h1, h2, h3, h4, h5, h6 {
   color: #ffffff !important;
 }
 
-/* Hero Verdict Card (Matching Image 1) */
+/* Hero Verdict Card (Crystal 3D Transparent Glass) */
 .hero-verdict-card {
   padding: 2.25rem 2.5rem !important;
-  background: rgba(10, 16, 32, 0.88) !important;
-  border-radius: 16px !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(6, 11, 24, 0.25) 100%) !important;
+  backdrop-filter: blur(28px) saturate(210%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(210%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.22) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6), inset 0 1.5px 1px rgba(255, 255, 255, 0.35) !important;
   position: relative;
+  overflow: hidden;
 }
 
 .verdict-hero-grid {
@@ -1672,12 +1679,16 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(255, 255, 255, 0.12) !important;
 }
 
-/* Claim Under Review Card */
+/* Claim Under Review Card (Crystal Glass) */
 .claim-under-review-card {
-  padding: 1.6rem 1.75rem;
-  background: rgba(10, 16, 32, 0.75);
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  border-radius: 14px;
+  padding: 1.6rem 1.75rem !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(6, 11, 24, 0.25) 100%) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
 .claim-body-text {
@@ -1700,10 +1711,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .middle-panel-card {
-  padding: 1.6rem 1.75rem;
-  background: rgba(10, 16, 32, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  padding: 1.6rem 1.75rem !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(6, 11, 24, 0.25) 100%) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
 .reasoning-paragraph {
@@ -1727,10 +1742,11 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .signal-badge-card {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(244, 63, 94, 0.25);
-  border-radius: 10px;
-  padding: 0.85rem 1rem;
+  background: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(244, 63, 94, 0.3) !important;
+  border-radius: 10px !important;
+  padding: 0.85rem 1rem !important;
 }
 
 .signal-card-head {
@@ -1753,12 +1769,16 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.4;
 }
 
-/* Verified Evidence & Sources Card */
+/* Verified Evidence & Sources Card (Crystal Glass) */
 .verified-sources-card {
-  padding: 1.6rem 1.75rem;
-  background: rgba(10, 16, 32, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
+  padding: 1.6rem 1.75rem !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(6, 11, 24, 0.25) 100%) !important;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
 }
 
 .sources-cards-list {
