@@ -176,7 +176,7 @@ export default function InputForm({ onSubmit, isLoading }) {
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '2rem' }}>
+    <div className="glass-panel glass-panel-glow" style={{ padding: '2.25rem' }}>
       {/* 4 Input Tabs */}
       <div className="input-tabs">
         <button
@@ -225,19 +225,19 @@ export default function InputForm({ onSubmit, isLoading }) {
               onChange={(e) => setTextInput(e.target.value)}
               required
             />
-            <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Try sample:</span>
+            <div style={{ marginTop: '0.85rem', display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500 }}>Try sample:</span>
               <button
                 type="button"
                 onClick={() => handleSampleClick('PM Modi announces 3 months free 5G recharge scheme for all Indian users')}
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
+                className="sample-pill"
               >
                 Free 5G Recharge Claim
               </button>
               <button
                 type="button"
                 onClick={() => handleSampleClick('2000 rupaye ke note me GPS chip hai jo zameen ke neeche bhi track karegi')}
-                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
+                className="sample-pill"
               >
                 Hinglish Note GPS Rumor
               </button>

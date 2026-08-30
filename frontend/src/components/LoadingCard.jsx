@@ -6,8 +6,8 @@ export default function LoadingCard() {
 
   const steps = [
     'Parsing input & detecting language context (English/Hindi/Hinglish)...',
-    'Sending request to Google Gemini 2.5 Flash model...',
-    'Performing real-time Google Search grounding & cross-referencing...',
+    'Sending request to TruthLens AI Engine...',
+    'Performing real-time Search grounding & cross-referencing...',
     'Detecting manipulation techniques & synthesizing verdict report...'
   ];
 
@@ -25,7 +25,7 @@ export default function LoadingCard() {
       </div>
 
       <h3 style={{ fontSize: '1.4rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
-        Analyzing Claim with Gemini AI
+        Analyzing Claim with TruthLens AI
       </h3>
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
         Fact-checking news, logical context, and cross-referencing web sources...

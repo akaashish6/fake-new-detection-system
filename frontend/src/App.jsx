@@ -43,7 +43,12 @@ export default function App() {
   };
 
   return (
-    <div>
+    <div style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
+      {/* 3D Ambient Lighting Orbs */}
+      <div className="ambient-orb ambient-orb-1" />
+      <div className="ambient-orb ambient-orb-2" />
+      <div className="ambient-orb ambient-orb-3" />
+
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <main className="main-layout">
@@ -52,7 +57,7 @@ export default function App() {
             <div className="hero-section">
               <h2 className="hero-title">AI Fake News & Misinformation Detector</h2>
               <p className="hero-subtitle">
-                Verify viral claims, news URLs, and screenshot forwards using Google Gemini 2.5 Flash with real-time Search Grounding.
+                Verify viral claims, news URLs, and screenshot forwards using advanced TruthLens AI Engine with real-time Search Grounding.
               </p>
             </div>
 
@@ -61,10 +66,12 @@ export default function App() {
                 <AlertCircle size={24} style={{ flexShrink: 0 }} />
                 <div>
                   <div style={{ fontWeight: 600 }}>Fact Check Failed</div>
-                  <div style={{ fontSize: '0.9rem', marginTop: '0.2rem' }}>{error}</div>
-                  {error.includes('GEMINI_API_KEY') && (
-                    <div style={{ fontSize: '0.85rem', marginTop: '0.5rem', color: '#fed7aa', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '4px' }}>
-                      👉 Please set your Google AI Studio key in the <code>.env</code> file: <code>GEMINI_API_KEY=your_key_here</code>
+                  <div style={{ fontSize: '0.9rem', marginTop: '0.2rem' }}>
+                    {error.includes('GEMINI_API_KEY') ? 'API Key configuration missing.' : error}
+                  </div>
+                  {(error.includes('GEMINI_API_KEY') || error.includes('API key')) && (
+                    <div style={{ fontSize: '0.85rem', marginTop: '0.5rem', color: '#fed7aa', background: 'rgba(0,0,0,0.3)', padding: '0.5rem 0.75rem', borderRadius: '6px', border: '1px solid rgba(254, 215, 170, 0.3)' }}>
+                      👉 Please configure your API key in the <code>.env</code> file: <code>GEMINI_API_KEY=your_key_here</code>
                     </div>
                   )}
                 </div>
@@ -88,3 +95,4 @@ export default function App() {
     </div>
   );
 }
+
