@@ -51,7 +51,10 @@ export default function App() {
 
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      <main className="main-layout">
+      <main className="main-layout" style={{ position: 'relative' }}>
+        {/* Left Cyber Matrix Grid Overlay */}
+        <div className="cyber-grid-left" />
+
         {activeTab === 'scan' ? (
           <>
             {/* HERO SECTION */}
@@ -96,44 +99,88 @@ export default function App() {
                     <InputForm onSubmit={handleFormSubmit} isLoading={isLoading} />
                   </div>
 
-                  {/* RIGHT: TRUTHLENS IN ACTION & 3D GRAPHIC */}
+                  {/* RIGHT: TRUTHLENS IN ACTION & 3D GLOBE GRAPHIC */}
                   <div className="detector-sidebar-column">
-                    {/* 3D Glowing Shield & Globe Background Graphic */}
+                    {/* 3D Wireframe Globe & Shield Graphic */}
                     <div className="shield-globe-graphic">
-                      <svg viewBox="0 0 200 200" className="shield-svg">
+                      <svg viewBox="0 0 400 400" className="globe-3d-svg">
                         <defs>
-                          <radialGradient id="shieldGlow" cx="50%" cy="50%" r="50%">
-                            <stop offset="0%" stopColor="rgba(56, 189, 248, 0.35)" />
-                            <stop offset="100%" stopColor="rgba(0, 0, 0, 0)" />
+                          <filter id="neonCyanGlow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="6" result="blur" />
+                            <feMerge>
+                              <feMergeNode in="blur" />
+                              <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                          </filter>
+
+                          <radialGradient id="globeAura" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stopColor="rgba(56, 189, 248, 0.45)" />
+                            <stop offset="45%" stopColor="rgba(29, 107, 243, 0.25)" />
+                            <stop offset="100%" stopColor="rgba(3, 7, 18, 0)" />
                           </radialGradient>
-                          <linearGradient id="shieldBorderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+
+                          <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                             <stop offset="0%" stopColor="#38bdf8" />
+                            <stop offset="50%" stopColor="#2563eb" />
                             <stop offset="100%" stopColor="#a855f7" />
                           </linearGradient>
                         </defs>
 
-                        {/* Outer Orbital Grid Rings */}
-                        <ellipse cx="100" cy="100" rx="90" ry="40" stroke="rgba(56, 189, 248, 0.25)" strokeWidth="1.2" fill="none" transform="rotate(-20 100 100)" />
-                        <ellipse cx="100" cy="100" rx="85" ry="35" stroke="rgba(168, 85, 247, 0.2)" strokeWidth="1" strokeDasharray="4 4" fill="none" transform="rotate(25 100 100)" />
-                        <circle cx="100" cy="100" r="70" stroke="rgba(56, 189, 248, 0.15)" strokeWidth="1" fill="url(#shieldGlow)" />
+                        {/* Background Globe Radial Glow */}
+                        <circle cx="200" cy="200" r="170" fill="url(#globeAura)" />
 
-                        {/* Shield Badge */}
+                        {/* 3D Wireframe Globe Sphere Grid */}
+                        <circle cx="200" cy="200" r="140" stroke="rgba(56, 189, 248, 0.35)" strokeWidth="1.5" fill="none" />
+                        <circle cx="200" cy="200" r="140" stroke="rgba(168, 85, 247, 0.25)" strokeWidth="1" strokeDasharray="3 6" fill="none" />
+
+                        {/* Latitude Ellipses */}
+                        <ellipse cx="200" cy="200" rx="140" ry="35" stroke="rgba(56, 189, 248, 0.3)" strokeWidth="1.2" fill="none" />
+                        <ellipse cx="200" cy="200" rx="140" ry="75" stroke="rgba(56, 189, 248, 0.25)" strokeWidth="1" fill="none" />
+                        <ellipse cx="200" cy="200" rx="140" ry="115" stroke="rgba(56, 189, 248, 0.2)" strokeWidth="1" fill="none" />
+
+                        {/* Longitude Ellipses */}
+                        <ellipse cx="200" cy="200" rx="35" ry="140" stroke="rgba(56, 189, 248, 0.3)" strokeWidth="1.2" fill="none" />
+                        <ellipse cx="200" cy="200" rx="75" ry="140" stroke="rgba(56, 189, 248, 0.25)" strokeWidth="1" fill="none" />
+                        <ellipse cx="200" cy="200" rx="115" ry="140" stroke="rgba(56, 189, 248, 0.2)" strokeWidth="1" fill="none" />
+
+                        {/* Tilted Neon Orbital Rings */}
+                        <ellipse cx="200" cy="200" rx="175" ry="60" stroke="#38bdf8" strokeWidth="1.5" fill="none" transform="rotate(-25 200 200)" filter="url(#neonCyanGlow)" opacity="0.8" />
+                        <ellipse cx="200" cy="200" rx="165" ry="50" stroke="#a855f7" strokeWidth="1.2" strokeDasharray="4 8" fill="none" transform="rotate(35 200 200)" opacity="0.75" />
+
+                        {/* Glowing Grid Node Dots & Stars */}
+                        <circle cx="200" cy="60" r="3" fill="#38bdf8" filter="url(#neonCyanGlow)" />
+                        <circle cx="200" cy="340" r="3" fill="#38bdf8" filter="url(#neonCyanGlow)" />
+                        <circle cx="60" cy="200" r="3.5" fill="#38bdf8" filter="url(#neonCyanGlow)" />
+                        <circle cx="340" cy="200" r="3.5" fill="#a855f7" filter="url(#neonCyanGlow)" />
+                        <circle cx="105" cy="115" r="2.5" fill="#38bdf8" />
+                        <circle cx="295" cy="115" r="3" fill="#38bdf8" filter="url(#neonCyanGlow)" />
+                        <circle cx="105" cy="285" r="3" fill="#a855f7" />
+                        <circle cx="295" cy="285" r="2.5" fill="#38bdf8" />
+                        <circle cx="350" cy="140" r="2" fill="#ffffff" />
+                        <circle cx="50" cy="260" r="2" fill="#ffffff" />
+
+                        {/* FOREGROUND SHIELD EMBLEM */}
                         <path
-                          d="M100 35 L145 60 V105 C145 138 100 162 100 162 C100 162 55 138 55 105 V60 Z"
-                          stroke="url(#shieldBorderGrad)"
-                          strokeWidth="3.5"
-                          fill="rgba(10, 16, 32, 0.65)"
-                          filter="drop-shadow(0 0 15px rgba(56, 189, 248, 0.5))"
+                          d="M200 85 L270 125 V200 C270 255 200 295 200 295 C200 295 130 255 130 200 V125 Z"
+                          stroke="url(#shieldGradient)"
+                          strokeWidth="4"
+                          fill="rgba(6, 12, 28, 0.88)"
+                          filter="url(#neonCyanGlow)"
                         />
-                        {/* Checkmark */}
                         <path
-                          d="M85 98 L96 109 L118 84"
+                          d="M200 98 L258 133 V197 C258 244 200 279 200 279 C200 279 142 244 142 197 V133 Z"
+                          stroke="rgba(56, 189, 248, 0.4)"
+                          strokeWidth="1.5"
+                          fill="none"
+                        />
+                        <path
+                          d="M175 190 L192 207 L228 168"
                           stroke="#38bdf8"
-                          strokeWidth="4.5"
+                          strokeWidth="6"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           fill="none"
-                          filter="drop-shadow(0 0 8px #38bdf8)"
+                          filter="url(#neonCyanGlow)"
                         />
                       </svg>
                     </div>
