@@ -173,10 +173,13 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Header (Slightly Darker Frosted Glass Banner for Crisp Separation) */
 .app-header {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 50;
-  background: linear-gradient(180deg, rgba(12, 18, 34, 0.72) 0%, rgba(6, 10, 22, 0.65) 100%) !important;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 1000;
+  background: linear-gradient(180deg, rgba(12, 18, 34, 0.88) 0%, rgba(6, 10, 22, 0.82) 100%) !important;
   backdrop-filter: blur(24px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -267,7 +270,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Main Layout Container (Expanded Width to match Image 2) */
 .main-layout {
   max-width: 1320px;
-  margin: 2.5rem auto 5rem;
+  margin: 6.5rem auto 5rem;
   padding: 0 2rem;
   position: relative;
   z-index: 1;
@@ -590,6 +593,7 @@ h1, h2, h3, h4, h5, h6 {
 .how-it-works-container {
   margin-top: 4.5rem;
   padding-top: 2rem;
+  scroll-margin-top: 100px;
 }
 
 .section-divider-title {
