@@ -239,28 +239,35 @@ export default function HistoryView() {
       {selectedScan && (
         <div className="modal-overlay" onClick={() => setSelectedScan(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ color: 'var(--text-primary)', fontSize: '1.2rem' }}>Fact Check Log Detail</h3>
+            <div className="modal-sticky-header">
+              <div className="modal-title-left">
+                <h3 className="modal-heading">Fact Check Log Detail</h3>
+                <span className="modal-log-badge">LOG #{selectedScan.id}</span>
+              </div>
               <button
                 type="button"
+                className="modal-close-btn"
                 onClick={() => setSelectedScan(null)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                title="Close Log Detail"
               >
-                <X size={24} />
+                <X size={20} />
               </button>
             </div>
 
-            <ReportCard
-              data={{
-                verdict: selectedScan.verdict,
-                confidence_score: selectedScan.confidence_score,
-                language_detected: selectedScan.language,
-                reasoning: selectedScan.reasoning,
-                manipulation_techniques: selectedScan.manipulation_techniques,
-                sources: selectedScan.sources
-              }}
-              onReset={() => setSelectedScan(null)}
-            />
+            <div className="modal-body-scroll">
+              <ReportCard
+                data={{
+                  verdict: selectedScan.verdict,
+                  confidence_score: selectedScan.confidence_score,
+                  language_detected: selectedScan.language,
+                  reasoning: selectedScan.reasoning,
+                  manipulation_techniques: selectedScan.manipulation_techniques,
+                  sources: selectedScan.sources,
+                  claim_text: selectedScan.input_content
+                }}
+                onReset={() => setSelectedScan(null)}
+              />
+            </div>
           </div>
         </div>
       )}

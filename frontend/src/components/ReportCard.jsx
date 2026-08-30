@@ -27,6 +27,81 @@ import {
 import confetti from 'canvas-confetti';
 import { downloadFactCheckCard } from '../utils/cardGenerator';
 
+function SourceFaviconAvatar({ url, title }) {
+  const [imgError, setImgError] = useState(false);
+
+  const rawUrl = (typeof url === 'string' ? url : '').toLowerCase();
+  const rawTitle = (typeof title === 'string' ? title : '').toLowerCase();
+
+  // 1. FIRST PRIORITY: Twitter / X URL Domain Check
+  const isTwitter = rawUrl.includes('twitter.com') || rawUrl.includes('x.com');
+  if (isTwitter) {
+    return (
+      <div className="source-logo-avatar" style={{ background: '#000000', border: '1px solid rgba(255,255,255,0.25)', boxShadow: '0 0 10px rgba(255,255,255,0.1)' }}>
+        <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '0.95rem' }}>𝕏</span>
+      </div>
+    );
+  }
+
+  // 2. SECOND PRIORITY: PIB (Press Information Bureau) Domain or Exclusive Title Check
+  const isPibDomain = rawUrl.includes('pib.gov.in');
+  if (isPibDomain || (rawTitle.includes('pib') && !rawUrl.includes('twitter') && !rawUrl.includes('x.com'))) {
+    return (
+      <div className="source-logo-avatar pib-avatar" style={{ background: 'linear-gradient(135deg, #090d16, #0f172a)', border: '1px solid rgba(255, 153, 51, 0.6)', boxShadow: '0 0 12px rgba(255, 153, 51, 0.25)' }}>
+        <svg viewBox="0 0 36 36" width="28" height="28">
+          <circle cx="18" cy="18" r="16" fill="#0b1120" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+          {/* Indian Tricolor Ring */}
+          <path d="M 4,18 A 14,14 0 0,1 32,18" fill="none" stroke="#FF9933" strokeWidth="2.5" />
+          <path d="M 4,18 A 14,14 0 0,0 32,18" fill="none" stroke="#138808" strokeWidth="2.5" />
+          <circle cx="18" cy="18" r="1.5" fill="#38bdf8" />
+          {/* Crisp PIB Emblem Text */}
+          <text x="18" y="21.5" textAnchor="middle" fill="#FFFFFF" fontSize="9.5" fontWeight="900" fontFamily="system-ui, sans-serif" letterSpacing="0.4px">
+            PIB
+          </text>
+        </svg>
+      </div>
+    );
+  }
+
+  // 3. THIRD PRIORITY: India Today Domain or Exclusive Title Check
+  const isIndiaTodayDomain = rawUrl.includes('indiatoday');
+  if (isIndiaTodayDomain || (rawTitle.includes('india today') && !rawUrl.includes('twitter') && !rawUrl.includes('x.com'))) {
+    return (
+      <div className="source-logo-avatar" style={{ background: 'linear-gradient(135deg, #be123c, #9f1239)', border: '1px solid rgba(244, 63, 94, 0.6)', boxShadow: '0 0 12px rgba(244, 63, 94, 0.25)' }}>
+        <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '0.62rem', lineHeight: 1.1, textAlign: 'center', display: 'block' }}>
+          INDIA<br/>TODAY
+        </span>
+      </div>
+    );
+  }
+
+  // 4. Fallback Google Favicon API
+  let faviconUrl = null;
+  try {
+    if (rawUrl && rawUrl !== '#') {
+      const parsed = new URL(rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`);
+      faviconUrl = `https://www.google.com/s2/favicons?domain=${parsed.hostname}&sz=128`;
+    }
+  } catch (e) {
+    faviconUrl = null;
+  }
+
+  return (
+    <div className="source-logo-avatar">
+      {faviconUrl && !imgError ? (
+        <img
+          src={faviconUrl}
+          alt={title || 'Source Logo'}
+          onError={() => setImgError(true)}
+          style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }}
+        />
+      ) : (
+        <span>{title ? title.charAt(0).toUpperCase() : 'G'}</span>
+      )}
+    </div>
+  );
+}
+
 export default function ReportCard({ data, onReset }) {
   const [copied, setCopied] = useState(false);
   const [copiedClaim, setCopiedClaim] = useState(false);
@@ -62,13 +137,13 @@ export default function ReportCard({ data, onReset }) {
   const getVerdictTheme = (v) => {
     switch (v) {
       case 'Real':
-        return { color: '#10b981', border: 'rgba(16, 185, 129, 0.45)', bg: 'rgba(16, 185, 129, 0.08)', glow: '0 0 30px rgba(16, 185, 129, 0.35)', icon: <ShieldCheck size={42} /> };
+        return { color: '#10b981', border: 'rgba(16, 185, 129, 0.35)', bg: 'rgba(16, 185, 129, 0.08)', glow: '0 0 18px rgba(16, 185, 129, 0.18)', icon: <ShieldCheck size={42} /> };
       case 'Fake':
-        return { color: '#ef4444', border: 'rgba(239, 68, 68, 0.45)', bg: 'rgba(239, 68, 68, 0.08)', glow: '0 0 30px rgba(239, 68, 68, 0.35)', icon: <ShieldAlert size={42} /> };
+        return { color: '#ef4444', border: 'rgba(239, 68, 68, 0.35)', bg: 'rgba(239, 68, 68, 0.08)', glow: '0 0 18px rgba(239, 68, 68, 0.18)', icon: <ShieldAlert size={42} /> };
       case 'Misleading':
-        return { color: '#f59e0b', border: 'rgba(245, 158, 11, 0.45)', bg: 'rgba(245, 158, 11, 0.08)', glow: '0 0 30px rgba(245, 158, 11, 0.35)', icon: <AlertTriangle size={42} /> };
+        return { color: '#f59e0b', border: 'rgba(245, 158, 11, 0.35)', bg: 'rgba(245, 158, 11, 0.08)', glow: '0 0 18px rgba(245, 158, 11, 0.18)', icon: <AlertTriangle size={42} /> };
       default:
-        return { color: '#8b5cf6', border: 'rgba(139, 92, 246, 0.45)', bg: 'rgba(139, 92, 246, 0.08)', glow: '0 0 30px rgba(139, 92, 246, 0.35)', icon: <HelpCircle size={42} /> };
+        return { color: '#8b5cf6', border: 'rgba(139, 92, 246, 0.35)', bg: 'rgba(139, 92, 246, 0.08)', glow: '0 0 18px rgba(139, 92, 246, 0.18)', icon: <HelpCircle size={42} /> };
     }
   };
 
@@ -134,7 +209,7 @@ export default function ReportCard({ data, onReset }) {
         </button>
       </div>
 
-      {/* 2. HERO VERDICT & CONFIDENCE CARD */}
+      {/* 2. HERO VERDICT & CONFIDENCE CARD (Matching Image 1) */}
       <div
         className="glass-panel hero-verdict-card"
         style={{
@@ -143,16 +218,66 @@ export default function ReportCard({ data, onReset }) {
         }}
       >
         <div className="verdict-hero-grid">
-          {/* COLUMN 1: 3D Shield Badge */}
-          <div className="shield-icon-container" style={{ borderColor: theme.border, color: theme.color }}>
-            <div className="shield-inner-glow" style={{ background: theme.color }} />
-            {theme.icon}
+          {/* COLUMN 1: 3D Shield Target Emblem */}
+          <div className="shield-target-wrapper">
+            <svg viewBox="0 0 160 160" className="shield-target-svg">
+              <defs>
+                <filter id="verdictGlowTheme" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="6" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              {/* Outer Crosshair Target Grid Lines */}
+              <circle cx="80" cy="80" r="72" stroke={theme.color} strokeWidth="1" fill="none" strokeDasharray="3 3" opacity="0.4" />
+              <circle cx="80" cy="80" r="60" stroke={theme.color} strokeWidth="1.2" fill="none" opacity="0.5" />
+              <circle cx="80" cy="80" r="48" stroke={theme.color} strokeWidth="1" fill="none" opacity="0.3" />
+
+              {/* Crosshair Axis Lines */}
+              <line x1="80" y1="4" x2="80" y2="156" stroke={theme.color} strokeWidth="1" opacity="0.3" />
+              <line x1="4" y1="80" x2="156" y2="80" stroke={theme.color} strokeWidth="1" opacity="0.3" />
+
+              {/* Target Corner Dots */}
+              <circle cx="20" cy="20" r="2.5" fill={theme.color} opacity="0.7" />
+              <circle cx="140" cy="20" r="2.5" fill={theme.color} opacity="0.7" />
+              <circle cx="20" cy="140" r="2.5" fill={theme.color} opacity="0.7" />
+              <circle cx="140" cy="140" r="2.5" fill={theme.color} opacity="0.7" />
+
+              {/* 3D Glowing Shield Badge */}
+              <path
+                d="M80 32 L118 52 V92 C118 118 80 136 80 136 C80 136 42 118 42 92 V52 Z"
+                stroke={theme.color}
+                strokeWidth="3.5"
+                fill="rgba(10, 16, 32, 0.9)"
+                filter="url(#verdictGlowTheme)"
+              />
+              <path
+                d="M80 42 L110 58 V90 C110 110 80 125 80 125 C80 125 50 110 50 90 V58 Z"
+                stroke={theme.color}
+                strokeWidth="1.2"
+                fill="none"
+                opacity="0.5"
+              />
+
+              {/* Center Exclamation Mark `!` or Checkmark */}
+              {verdict === 'Fake' ? (
+                <g filter="url(#verdictGlowTheme)">
+                  <line x1="80" y1="62" x2="80" y2="86" stroke="#ffffff" strokeWidth="5.5" strokeLinecap="round" />
+                  <circle cx="80" cy="98" r="3.5" fill="#ffffff" />
+                </g>
+              ) : (
+                <path d="M68 84 L76 92 L94 72" stroke="#ffffff" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none" filter="url(#verdictGlowTheme)" />
+              )}
+            </svg>
           </div>
 
-          {/* COLUMN 2: Verdict Copy */}
+          {/* COLUMN 2: Verdict Copy & Shining Text */}
           <div className="verdict-copy-block">
-            <span className="verdict-label-small">VERDICT</span>
-            <h1 className="verdict-title-huge" style={{ color: theme.color }}>
+            <span className="verdict-label-small" style={{ color: theme.color }}>VERDICT</span>
+            <h1 className="verdict-title-shining" style={{ color: theme.color }}>
               {verdict.toUpperCase()}
             </h1>
             <p className="verdict-summary-text">
@@ -168,28 +293,29 @@ export default function ReportCard({ data, onReset }) {
             </div>
           </div>
 
-          {/* COLUMN 3: Donut Gauge Score */}
+          {/* COLUMN 3: Donut Gauge Score Ring */}
           <div className="gauge-column">
-            <div className="donut-gauge-wrapper">
-              <svg width="100" height="100" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="35" fill="transparent" stroke="rgba(255,255,255,0.08)" strokeWidth="6" />
+            <div className="donut-gauge-wrapper-large">
+              <svg width="130" height="130" viewBox="0 0 130 130">
+                <circle cx="65" cy="65" r="52" fill="transparent" stroke="rgba(255,255,255,0.08)" strokeWidth="7" />
                 <circle
-                  cx="50"
-                  cy="50"
-                  r="35"
+                  cx="65"
+                  cy="65"
+                  r="52"
                   fill="transparent"
                   stroke={theme.color}
-                  strokeWidth="6"
-                  strokeDasharray="220"
-                  strokeDashoffset={strokeDashoffset}
+                  strokeWidth="7.5"
+                  strokeDasharray="327"
+                  strokeDashoffset={327 - (327 * confidence_score) / 100}
                   strokeLinecap="round"
-                  transform="rotate(-90 50 50)"
+                  transform="rotate(-90 65 65)"
+                  filter="url(#verdictGlowTheme)"
                   style={{ transition: 'stroke-dashoffset 1s ease-in-out' }}
                 />
               </svg>
-              <div className="donut-center-content">
-                <span className="donut-score-num">{confidence_score}%</span>
-                <span className="donut-score-sub">AI CONFIDENCE SCORE</span>
+              <div className="donut-center-content-large">
+                <span className="donut-score-num-large">{confidence_score}%</span>
+                <span className="donut-score-sub-large">AI CONFIDENCE<br />SCORE</span>
               </div>
             </div>
           </div>
@@ -325,16 +451,14 @@ export default function ReportCard({ data, onReset }) {
           {displaySources.map((src, idx) => {
             const url = typeof src === 'string' ? src : src.url || '#';
             const title = typeof src === 'string' ? src : src.title || url;
-            const handle = src.handle || '@FactCheck';
-            const badge = src.badge || 'Official Source';
+            const handle = src.handle || (url !== '#' ? `@${new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace('www.', '')}` : '@FactCheck');
+            const badge = src.badge || (url.includes('gov') ? 'Official Government Source' : 'Verified Media Source');
             const desc = src.description || 'Confirmed details and verified evidence regarding this viral claim.';
 
             return (
               <div key={idx} className="source-card-item">
                 <div className="source-card-left">
-                  <div className="source-logo-avatar">
-                    {title.charAt(0).toUpperCase()}
-                  </div>
+                  <SourceFaviconAvatar url={url} title={title} />
                   <div>
                     <div className="source-title-row">
                       <h4 className="source-title-text">{title}</h4>
