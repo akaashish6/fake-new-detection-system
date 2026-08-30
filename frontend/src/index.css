@@ -1,11 +1,11 @@
 :root {
   --bg-primary: #02050e;
-  --bg-surface: rgba(8, 14, 28, 0.45);
-  --bg-card: rgba(10, 16, 32, 0.42);
-  --bg-card-hover: rgba(16, 25, 48, 0.58);
-  --border-color: rgba(255, 255, 255, 0.12);
-  --border-highlight: rgba(255, 255, 255, 0.22);
-  --glass-top-border: rgba(255, 255, 255, 0.28);
+  --bg-surface: rgba(8, 14, 28, 0.25);
+  --bg-card: rgba(10, 16, 32, 0.25);
+  --bg-card-hover: rgba(16, 25, 48, 0.38);
+  --border-color: rgba(255, 255, 255, 0.14);
+  --border-highlight: rgba(255, 255, 255, 0.3);
+  --glass-top-border: rgba(255, 255, 255, 0.35);
   
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
@@ -130,16 +130,19 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.02em;
 }
 
-/* Ultra-Transparent 3D Glassmorphism Containers (Matching Reference Image) */
+/* Ultra-Transparent Crystal 3D Glassmorphism Containers */
 .glass-panel {
-  background: rgba(10, 16, 32, 0.42) !important;
-  backdrop-filter: blur(24px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.22) !important;
-  border-left: 1px solid rgba(255, 255, 255, 0.16) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(6, 11, 24, 0.28) 100%) !important;
+  backdrop-filter: blur(28px) saturate(210%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(210%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.22) !important;
   border-radius: var(--radius-xl) !important;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 
+    0 30px 70px rgba(0, 0, 0, 0.6),
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.35),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.4) !important;
   position: relative;
   overflow: hidden;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
@@ -152,20 +155,20 @@ h1, h2, h3, h4, h5, h6 {
   top: 0;
   left: 0;
   right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.28) 20%, rgba(56, 189, 248, 0.45) 50%, rgba(255, 255, 255, 0.28) 80%, transparent 100%);
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.45) 20%, rgba(56, 189, 248, 0.6) 50%, rgba(255, 255, 255, 0.45) 80%, transparent 100%);
   pointer-events: none;
   z-index: 2;
 }
 
 /* Glowing Halo Card Effect */
 .glass-panel-glow {
-  border-color: rgba(56, 189, 248, 0.35) !important;
-  border-top-color: rgba(255, 255, 255, 0.35) !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  border-top-color: rgba(255, 255, 255, 0.45) !important;
   box-shadow: 
-    0 0 35px rgba(56, 189, 248, 0.18),
-    0 25px 60px -12px rgba(0, 0, 0, 0.85),
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.35) !important;
+    0 0 45px rgba(56, 189, 248, 0.22),
+    0 30px 70px -12px rgba(0, 0, 0, 0.85),
+    inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.45) !important;
 }
 
 /* Header */
