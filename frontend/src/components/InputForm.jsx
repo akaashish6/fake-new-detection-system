@@ -217,29 +217,46 @@ export default function InputForm({ onSubmit, isLoading }) {
         {/* TAB 1: TEXT CLAIM */}
         {inputType === 'text' && (
           <div className="form-group">
-            <label className="form-label">Paste Claim or Forward Message</label>
-            <textarea
-              className="custom-textarea"
-              placeholder="Paste news claim, viral WhatsApp message, or tweet (supports English, Hindi & Hinglish)..."
-              value={textInput}
-              onChange={(e) => setTextInput(e.target.value)}
-              required
-            />
-            <div style={{ marginTop: '0.85rem', display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 500 }}>Try sample:</span>
+            <label className="form-label">Paste your claim or forward message</label>
+            <div className="textarea-container">
+              <textarea
+                className="custom-textarea"
+                placeholder="Paste news claim, viral WhatsApp message, or tweet (supports English, Hindi & Hinglish)..."
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                maxLength={5000}
+                required
+              />
+              <div className="textarea-footer">
+                <span className="char-count">{textInput.length} / 5000</span>
+                <span className="ai-ready-badge">
+                  <Sparkles size={14} /> AI Ready
+                </span>
+              </div>
+            </div>
+
+            <div className="sample-pills-row">
+              <span className="sample-label">Try an example:</span>
               <button
                 type="button"
                 onClick={() => handleSampleClick('PM Modi announces 3 months free 5G recharge scheme for all Indian users')}
-                className="sample-pill"
+                className="sample-pill-ref"
               >
-                Free 5G Recharge Claim
+                ⚡ 5G Recharge Scam
               </button>
               <button
                 type="button"
                 onClick={() => handleSampleClick('2000 rupaye ke note me GPS chip hai jo zameen ke neeche bhi track karegi')}
-                className="sample-pill"
+                className="sample-pill-ref"
               >
-                Hinglish Note GPS Rumor
+                📍 Hinglish GPS Rumor
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSampleClick('Election Commission announced voter ID card updates via WhatsApp link')}
+                className="sample-pill-ref"
+              >
+                🗳️ Election Viral Claim
               </button>
             </div>
           </div>
@@ -512,7 +529,7 @@ export default function InputForm({ onSubmit, isLoading }) {
 
         <button type="submit" className="submit-btn" disabled={isLoading || (inputType === 'audio' && !audioFile)}>
           <Sparkles size={20} />
-          {isLoading ? 'Processing Voice/Text Fact Check...' : 'Verify Claim with TruthLens AI'}
+          {isLoading ? 'Processing Voice/Text Fact Check...' : 'Analyze with TruthLens AI'}
         </button>
       </form>
     </div>
