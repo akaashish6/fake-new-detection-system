@@ -175,8 +175,45 @@ export default function ReportCard({ data, onReset }) {
   ];
 
   const displaySources = sources.length > 0 ? sources : defaultSourcesList;
-  const strokeDashoffset = 220 - (220 * confidence_score) / 100;
 
+// Compact explanation shown directly inside the verdict card
+const getVerdictReasons = (v) => {
+  switch (v) {
+    case 'Fake':
+      return [
+        'Verified evidence directly contradicts the claim',
+        'Reliable sources indicate the claim is false',
+        'Analysis found signals associated with fabricated content'
+      ];
+
+    case 'Misleading':
+      return [
+        'Verified sources contradict or qualify the claim',
+        'Important context appears to be missing or distorted',
+        manipulation_techniques.length > 0
+          ? `Analysis detected ${manipulation_techniques.length} manipulation signal${manipulation_techniques.length > 1 ? 's' : ''}`
+          : 'Analysis identified misleading contextual signals'
+      ];
+
+    case 'Real':
+      return [
+        'Reliable sources support the main claim',
+        'Available evidence does not show significant contradictions',
+        'Analysis found no strong manipulation signals'
+      ];
+
+    default:
+      return [
+        'Available evidence is insufficient to confirm the claim',
+        'Reliable sources do not provide enough direct support or contradiction',
+        'The available signals do not establish a conclusive verdict'
+      ];
+  }
+};
+
+const verdictReasons = getVerdictReasons(verdict);
+
+const strokeDashoffset = 220 - (220 * confidence_score) / 100;
   return (
     <div className="report-page-container">
       {/* 1. TOP ACTION HEADER */}
@@ -276,14 +313,80 @@ export default function ReportCard({ data, onReset }) {
             <p className="verdict-summary-text">
               {verdict === 'Fake' ? 'This claim is completely false.' : verdict === 'Real' ? 'This claim is verified authentic.' : 'This claim contains misleading details.'}
             </p>
-            <div className="verdict-pills-row">
-              <span className="verdict-pill-tag" style={{ borderColor: theme.border, color: theme.color, background: theme.bg }}>
-                High Confidence
-              </span>
-              <span className="verdict-pill-tag" style={{ borderColor: theme.border, color: theme.color, background: theme.bg }}>
-                AI Verified
-              </span>
-            </div>
+            {/* WHY THIS VERDICT - COMPACT SUMMARY */}
+<div
+  className="verdict-reasons-box"
+  style={{
+    marginTop: '1rem',
+    padding: '0.9rem 1rem',
+    borderRadius: '12px',
+    background: 'rgba(0, 0, 0, 0.18)',
+    border: `1px solid ${theme.border}`,
+    maxWidth: '520px'
+  }}
+>
+  <div
+    style={{
+      fontSize: '0.78rem',
+      fontWeight: 800,
+      color: '#ffffff',
+      marginBottom: '0.55rem',
+      letterSpacing: '0.04em'
+    }}
+  >
+    WHY THIS VERDICT?
+  </div>
+
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+    {verdictReasons.map((reason, index) => (
+      <div
+        key={index}
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '0.5rem',
+          fontSize: '0.78rem',
+          lineHeight: 1.4,
+          color: '#cbd5e1'
+        }}
+      >
+        <CheckCircle2
+          size={15}
+          style={{
+            color: theme.color,
+            flexShrink: 0,
+            marginTop: '2px'
+          }}
+        />
+        <span>{reason}</span>
+      </div>
+    ))}
+  </div>
+</div>
+
+<div className="verdict-pills-row" style={{ marginTop: '0.85rem' }}>
+  <span
+    className="verdict-pill-tag"
+    style={{
+      borderColor: theme.border,
+      color: theme.color,
+      background: theme.bg
+    }}
+  >
+    High Confidence
+  </span>
+
+  <span
+    className="verdict-pill-tag"
+    style={{
+      borderColor: theme.border,
+      color: theme.color,
+      background: theme.bg
+    }}
+  >
+    AI Verified
+  </span>
+</div>
           </div>
 
           {/* COLUMN 3: Donut Gauge Score Ring */}
