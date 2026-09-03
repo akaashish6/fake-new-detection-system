@@ -20,3 +20,7 @@ dist/
 # IDE & Editor files
 .vscode/
 .idea/
+.env
+scans.db
+__pycache__/
+*.pyc

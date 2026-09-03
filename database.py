@@ -37,10 +37,14 @@ def init_db():
         cursor.execute("ALTER TABLE scans ADD COLUMN claim_text TEXT")
     except Exception:
         pass
+    try:
+        cursor.execute("ALTER TABLE scans ADD COLUMN verdict_reasons TEXT")
+    except Exception:
+        pass
     conn.commit()
     conn.close()
 
-def save_scan(input_type, input_content, language, verdict, confidence_score, reasoning, manipulation_techniques, sources, forensics=None, claim_text=None):
+def save_scan(input_type, input_content, language, verdict, confidence_score, reasoning, manipulation_techniques, sources, forensics=None, claim_text=None, verdict_reasons=None):
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -52,17 +56,22 @@ def save_scan(input_type, input_content, language, verdict, confidence_score, re
         cursor.execute("ALTER TABLE scans ADD COLUMN claim_text TEXT")
     except Exception:
         pass
+    try:
+        cursor.execute("ALTER TABLE scans ADD COLUMN verdict_reasons TEXT")
+    except Exception:
+        pass
     
     final_claim_text = claim_text or input_content
     
     # Store JSON strings for lists & dicts
     tech_json = json.dumps(manipulation_techniques) if isinstance(manipulation_techniques, list) else manipulation_techniques
     sources_json = json.dumps(sources) if isinstance(sources, list) else sources
+    reasons_json = json.dumps(verdict_reasons) if isinstance(verdict_reasons, list) else verdict_reasons
     forensics_json = json.dumps(forensics) if forensics else None
     
     cursor.execute('''
-        INSERT INTO scans (input_type, input_content, claim_text, language, verdict, confidence_score, reasoning, manipulation_techniques, sources, forensics, timestamp)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO scans (input_type, input_content, claim_text, language, verdict, confidence_score, reasoning, manipulation_techniques, sources, forensics, verdict_reasons, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         input_type,
         input_content,
@@ -74,6 +83,7 @@ def save_scan(input_type, input_content, language, verdict, confidence_score, re
         tech_json,
         sources_json,
         forensics_json,
+        reasons_json,
         datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     ))
     scan_id = cursor.lastrowid
@@ -102,6 +112,11 @@ def get_scans():
             item['sources'] = json.loads(item['sources'])
         except Exception:
             item['sources'] = []
+
+        try:
+            item['verdict_reasons'] = json.loads(item['verdict_reasons']) if item.get('verdict_reasons') else []
+        except Exception:
+            item['verdict_reasons'] = []
             
         if 'forensics' in item and item['forensics']:
             try:
@@ -134,6 +149,11 @@ def get_scan(scan_id):
         item['sources'] = json.loads(item['sources'])
     except Exception:
         item['sources'] = []
+
+    try:
+        item['verdict_reasons'] = json.loads(item['verdict_reasons']) if item.get('verdict_reasons') else []
+    except Exception:
+        item['verdict_reasons'] = []
         
     if 'forensics' in item and item['forensics']:
         try:

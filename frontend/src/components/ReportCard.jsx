@@ -155,65 +155,111 @@ export default function ReportCard({ data, onReset }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const defaultSourcesList = [
-    {
-      title: 'PIB Fact Check Official Twitter',
-      handle: '@PIBFactCheck',
-      badge: 'Official Government Source',
-      description: 'PIB has confirmed that no such scheme exists. This message is fake.',
-      url: 'https://twitter.com/PIBFactCheck',
-      verified: true
-    },
-    {
-      title: 'India Today Fact Check',
-      handle: '@IndiaToday',
-      badge: 'Independent Media Source',
-      description: 'India Today has debunked this viral claim as a phishing scam.',
-      url: 'https://www.indiatoday.in/fact-check',
-      verified: true
+  const scanIdFormatted = data?.scan_id ? `#TR-${String(data.scan_id).padStart(5, '0')}` : '#TR-00142';
+  const timestampFormatted = data?.timestamp || new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+
+  const getVerdictSummaryText = (v, lang) => {
+    if (lang === 'Hinglish') {
+      switch (v) {
+        case 'Fake': return 'Yeh claim bilkul jhooth aur galat hai.';
+        case 'Real': return 'Yeh claim bilkul sach aur verified hai.';
+        case 'Misleading': return 'Is claim me adha sach aur bhramak jankari hai.';
+        default: return 'Is claim ki direct verification jankari nahi mili.';
+      }
     }
-  ];
+    if (lang === 'Hindi') {
+      switch (v) {
+        case 'Fake': return 'यह दावा पूरी तरह से झूठा और गलत है।';
+        case 'Real': return 'यह दावा पूरी तरह से सत्य और सत्यापित है।';
+        case 'Misleading': return 'इस दावे में भ्रामक जानकारी शामिल है।';
+        default: return 'इस दावे की प्रत्यक्ष पुष्टि उपलब्ध नहीं है।';
+      }
+    }
+    switch (v) {
+      case 'Fake': return 'This claim is completely false.';
+      case 'Real': return 'This claim is verified authentic.';
+      case 'Misleading': return 'This claim contains misleading details.';
+      default: return 'Available evidence is insufficient.';
+    }
+  };
 
-  const displaySources = sources.length > 0 ? sources : defaultSourcesList;
+  const getConfidenceLevelTitle = (score) => {
+    if (score >= 80) return 'High Confidence';
+    if (score >= 60) return 'Moderate Confidence';
+    return 'Low Confidence';
+  };
 
-// Compact explanation shown directly inside the verdict card
-const getVerdictReasons = (v) => {
-  switch (v) {
-    case 'Fake':
-      return [
-        'Verified evidence directly contradicts the claim',
-        'Reliable sources indicate the claim is false',
-        'Analysis found signals associated with fabricated content'
-      ];
+  const getConfidenceDescription = (v, score, lang) => {
+    if (lang === 'Hinglish') {
+      switch (v) {
+        case 'Fake': return 'Humara AI model verified news aur market rates ke basis par sure hai ki yeh claim jhooth hai.';
+        case 'Real': return 'Humara AI model verified reports aur sources ke basis par sure hai ki yeh claim sach hai.';
+        case 'Misleading': return 'Humare AI model ne is claim me galat context aur exaggerated details payi hain.';
+        default: return 'Is claim ke liye direct online verification details nahi mili hain.';
+      }
+    }
+    if (lang === 'Hindi') {
+      switch (v) {
+        case 'Fake': return 'हमारा AI मॉडल सत्यापित खबरों और आंकड़ों के आधार पर आश्वस्त है कि यह दावा झूठा है।';
+        case 'Real': return 'हमारा AI मॉडल आधिकारिक रिपोर्टों के आधार पर आश्वस्त है कि यह दावा सच है।';
+        case 'Misleading': return 'हमारे AI मॉडल ने इस दावे में भ्रामक तथ्य और अधूरा संदर्भ पाया है।';
+        default: return 'इस दावे के लिए पर्याप्त ऑनलाइन सत्यापन आंकड़े उपलब्ध नहीं हैं।';
+      }
+    }
+    const levelStr = score >= 80 ? 'highly confident' : 'confident';
+    switch (v) {
+      case 'Fake':
+        return `Our AI model is ${levelStr} this claim is false based on verified evidence, market data, and factual contradictions.`;
+      case 'Real':
+        return `Our AI model is ${levelStr} this claim is authentic and supported by verified reports and reliable sources.`;
+      case 'Misleading':
+        return `Our AI model detected distorted facts or missing context in this claim based on multi-source analysis.`;
+      default:
+        return `Our AI model found limited direct verification data for this specific claim. Proceed with caution.`;
+    }
+  };
 
-    case 'Misleading':
-      return [
-        'Verified sources contradict or qualify the claim',
-        'Important context appears to be missing or distorted',
-        manipulation_techniques.length > 0
-          ? `Analysis detected ${manipulation_techniques.length} manipulation signal${manipulation_techniques.length > 1 ? 's' : ''}`
-          : 'Analysis identified misleading contextual signals'
-      ];
+  const getFallbackSources = (claimTxt) => {
+    const cleanTopic = (claimTxt || 'Claim Verification').slice(0, 40);
+    const searchUrl = `https://news.google.com/search?q=${encodeURIComponent(cleanTopic)}`;
+    return [
+      {
+        title: `Google News Search: "${cleanTopic}"`,
+        handle: '@GoogleNews',
+        badge: 'Web Verification Search',
+        description: `Explore live news articles and verification reports related to "${cleanTopic}".`,
+        url: searchUrl,
+        verified: true
+      }
+    ];
+  };
 
-    case 'Real':
-      return [
-        'Reliable sources support the main claim',
-        'Available evidence does not show significant contradictions',
-        'Analysis found no strong manipulation signals'
-      ];
+  const displaySources = (sources && sources.length > 0) ? sources : getFallbackSources(claim_text);
+  const visibleSources = showAllSources ? displaySources : displaySources.slice(0, 2);
+  const hiddenCount = Math.max(0, displaySources.length - 2);
 
-    default:
-      return [
-        'Available evidence is insufficient to confirm the claim',
-        'Reliable sources do not provide enough direct support or contradiction',
-        'The available signals do not establish a conclusive verdict'
-      ];
-  }
-};
+  // Dynamic verdict reasons from Gemini API or fallback
+  const verdictReasons = (Array.isArray(data?.verdict_reasons) && data.verdict_reasons.length > 0)
+    ? data.verdict_reasons
+    : (verdict === 'Fake' ? [
+        'Verified evidence and standard market rates contradict the claim',
+        'Official reports and data confirm the claim is false',
+        'Analysis detected false numbers or exaggerated statements'
+      ] : verdict === 'Real' ? [
+        'Reliable sources support the main facts of this claim',
+        'No significant factual contradictions found in evidence',
+        'Confirmed against established domain logic and news reports'
+      ] : verdict === 'Misleading' ? [
+        'Claim distorts true context or uses selective facts',
+        'Important details are omitted or exaggerated',
+        'Partial truth mixed with unverified assertions'
+      ] : [
+        'Specific claim details lack direct public verification sources',
+        'Available search signals do not establish a conclusive verdict',
+        'Exercise caution and cross-check before sharing'
+      ]);
 
-const verdictReasons = getVerdictReasons(verdict);
-
-const strokeDashoffset = 220 - (220 * confidence_score) / 100;
+  const strokeDashoffset = 220 - (220 * confidence_score) / 100;
   return (
     <div className="report-page-container">
       {/* 1. TOP ACTION HEADER */}
@@ -226,10 +272,10 @@ const strokeDashoffset = 220 - (220 * confidence_score) / 100;
         <div className="report-title-center">
           <div className="report-title-row">
             <h2 className="report-main-heading">FACT-CHECK REPORT</h2>
-            <span className="report-id-badge">#TR-00142</span>
+            <span className="report-id-badge">{scanIdFormatted}</span>
           </div>
           <div className="report-date-time">
-            <Calendar size={13} /> 30 Aug 2026, 11:57 AM
+            <Calendar size={13} /> {timestampFormatted}
           </div>
         </div>
 
@@ -311,7 +357,7 @@ const strokeDashoffset = 220 - (220 * confidence_score) / 100;
               {verdict.toUpperCase()}
             </h1>
             <p className="verdict-summary-text">
-              {verdict === 'Fake' ? 'This claim is completely false.' : verdict === 'Real' ? 'This claim is verified authentic.' : 'This claim contains misleading details.'}
+              {getVerdictSummaryText(verdict, language_detected)}
             </p>
             {/* WHY THIS VERDICT - COMPACT SUMMARY */}
 <div
@@ -373,7 +419,7 @@ const strokeDashoffset = 220 - (220 * confidence_score) / 100;
       background: theme.bg
     }}
   >
-    High Confidence
+    {getConfidenceLevelTitle(confidence_score)}
   </span>
 
   <span
@@ -419,9 +465,9 @@ const strokeDashoffset = 220 - (220 * confidence_score) / 100;
           {/* COLUMN 4: Confidence Level Text */}
           <div className="confidence-details-column">
             <span className="confidence-label">CONFIDENCE LEVEL</span>
-            <h4 className="confidence-heading">High Confidence</h4>
+            <h4 className="confidence-heading">{getConfidenceLevelTitle(confidence_score)}</h4>
             <p className="confidence-desc">
-              Our AI model is highly confident this claim is false based on multiple signals and verified sources.
+              {getConfidenceDescription(verdict, confidence_score, language_detected)}
             </p>
           </div>
         </div>
@@ -544,7 +590,7 @@ const strokeDashoffset = 220 - (220 * confidence_score) / 100;
         </div>
 
         <div className="sources-cards-list">
-          {displaySources.map((src, idx) => {
+          {visibleSources.map((src, idx) => {
             const url = typeof src === 'string' ? src : src.url || '#';
             const title = typeof src === 'string' ? src : src.title || url;
             const handle = src.handle || (url !== '#' ? `@${new URL(url.startsWith('http') ? url : `https://${url}`).hostname.replace('www.', '')}` : '@FactCheck');
@@ -575,15 +621,19 @@ const strokeDashoffset = 220 - (220 * confidence_score) / 100;
           })}
         </div>
 
-        <div className="sources-footer-btn-row">
-          <button
-            type="button"
-            onClick={() => setShowAllSources(!showAllSources)}
-            className="view-more-sources-btn"
-          >
-            View More Sources ({displaySources.length + 1}) ∨
-          </button>
-        </div>
+        {displaySources.length > 2 && (
+          <div className="sources-footer-btn-row">
+            <button
+              type="button"
+              onClick={() => setShowAllSources(!showAllSources)}
+              className="view-more-sources-btn"
+            >
+              {showAllSources 
+                ? 'Show Fewer Sources ∧' 
+                : `View More Sources (${hiddenCount} More) ∨`}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 7. BOTTOM ACTION FOOTER */}

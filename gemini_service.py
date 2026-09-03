@@ -1,14 +1,19 @@
 import os
 import re
 import json
+import base64
 import requests
+from urllib.parse import urlparse, quote
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from bs4 import BeautifulSoup
 from PIL import Image
 import io
 from google import genai
 from google.genai import types
 
-DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
+# Default Gemini flagship model
+DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
 
 def get_client():
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -17,33 +22,28 @@ def get_client():
     return genai.Client(api_key=api_key)
 
 def detect_language(text):
-    """
-    Basic detection for Hindi script or common Hinglish patterns.
-    """
+    """Detect Hindi script, Hinglish keywords, or English."""
     if not text:
         return "English"
-        
-    # Check for Devanagari script range \u0900-\u097F
     if re.search(r'[\u0900-\u097F]', text):
         return "Hindi"
-        
-    # Common Hinglish words check
-    hinglish_keywords = [
+    hinglish_keywords = {
         'karo', 'karne', 'bhejo', 'share', 'viral', 'sach', 'jhooth', 'jhut',
         'subah', 'sham', 'raat', 'modi', 'sarkar', 'yojana', 'free', 'milega',
-        'dekho', 'dhyan', 'kripya', 'dost', 'bhai', 'khabar', 'news'
-    ]
-    words = re.findall(r'\b\w+\b', text.lower())
-    match_count = sum(1 for w in words if w in hinglish_keywords)
-    if match_count >= 2:
+        'dekho', 'dhyan', 'kripya', 'dost', 'bhai', 'khabar', 'news', 'rupaye',
+        'hai', 'hain', 'mein', 'me', 'ke', 'ka', 'ki', 'se', 'ko', 'par', 'per',
+        'ne', 'bhi', 'nhi', 'nahi', 'hoga', 'hogi', 'raha', 'rahi', 'rahe',
+        'kya', 'kaise', 'kab', 'kahan', 'kyun', 'wala', 'wali', 'wale', 'mil',
+        'rha', 'rhi', 'rhe', 'diya', 'diye', 'chahiye', 'karna', 'karto', 'dene',
+        'milegi', 'rahenge', 'rahengi', 'milgaya', 'milgaye', 'paise', 'paisa'
+    }
+    words = [w.lower() for w in re.findall(r'\b\w+\b', text)]
+    if any(w in hinglish_keywords for w in words):
         return "Hinglish"
-        
     return "English"
 
 def extract_text_from_url(url):
-    """
-    Scrapes title and main paragraph text from news article URL.
-    """
+    """Scrapes news article title and snippet from URL."""
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
@@ -51,243 +51,299 @@ def extract_text_from_url(url):
         response = requests.get(url, headers=headers, timeout=8)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Extract title
         title = soup.title.string.strip() if soup.title and soup.title.string else ""
-        
-        # Extract meta description
-        meta_desc = ""
         meta = soup.find('meta', attrs={'name': 'description'}) or soup.find('meta', attrs={'property': 'og:description'})
-        if meta and meta.get('content'):
-            meta_desc = meta['content'].strip()
-            
-        # Extract main paragraphs
+        meta_desc = meta['content'].strip() if meta and meta.get('content') else ""
         paragraphs = [p.get_text().strip() for p in soup.find_all('p') if len(p.get_text().strip()) > 30]
-        content_snippet = " ".join(paragraphs[:5])  # First 5 paragraphs
-        
-        extracted = f"URL Title: {title}\nMeta Description: {meta_desc}\nContent Snippet: {content_snippet}"
-        return extracted.strip()
+        snippet = " ".join(paragraphs[:5])
+        return f"URL Title: {title}\nMeta Description: {meta_desc}\nSnippet: {snippet}".strip()
     except Exception as e:
-        return f"URL Link: {url} (Note: Could not scrape full content automatically: {str(e)})"
+        return f"URL: {url} (Scrape note: {str(e)})"
+
+def extract_search_query(text):
+    """Clean text to extract key search keywords for web search."""
+    if not text:
+        return ""
+    clean = re.sub(r'https?://\S+', '', text)
+    clean = re.sub(r'[^\w\s]', ' ', clean)
+    words = clean.split()
+    if len(words) <= 6:
+        return " ".join(words)
+    stopwords = {
+        'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+        'in', 'on', 'at', 'to', 'for', 'with', 'by', 'about', 'against', 'between',
+        'into', 'through', 'during', 'before', 'after', 'above', 'below', 'from',
+        'up', 'down', 'out', 'of', 'off', 'over', 'under', 'again', 'further',
+        'then', 'once', 'this', 'that', 'these', 'those', 'am', 'stand', 'stands',
+        'today', 'per', 'gram', 'claim', 'news', 'viral', 'says', 'said'
+    }
+    filtered = [w for w in words if w.lower() not in stopwords]
+    return " ".join(filtered[:6]) if filtered else " ".join(words[:6])
+
+def resolve_publisher_url(encoded_url):
+    """Try to decode Google News redirect URL to direct publisher link."""
+    if not encoded_url or "news.google.com" not in encoded_url:
+        return encoded_url
+    try:
+        match = re.search(r"/(?:rss/)?articles/([^/?]+)", encoded_url)
+        if match:
+            encoded = match.group(1)
+            padded = encoded + "=" * (-len(encoded) % 4)
+            decoded = base64.urlsafe_b64decode(padded)
+            url_match = re.search(rb"https?://[^\x00\s\"<>]+", decoded)
+            if url_match:
+                candidate = url_match.group(0).decode("utf-8", errors="ignore").split("\x00")[0]
+                if candidate.startswith(("http://", "https://")):
+                    return candidate
+    except Exception:
+        pass
+    return encoded_url
+
+def search_web_sources(query, max_results=4):
+    """Search Google News RSS for real-time web verification sources."""
+    search_term = extract_search_query(query)
+    if not search_term:
+        return []
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+
+    results = []
+    seen_urls = set()
+
+    # Try specific query first, then clean topic query if needed
+    queries = [search_term]
+    topic_only = re.sub(r'\b\d+\b', '', search_term).strip()
+    if topic_only and topic_only != search_term and len(topic_only) > 3:
+        queries.append(topic_only)
+
+    for q in queries:
+        if len(results) >= max_results:
+            break
+        rss_url = f"https://news.google.com/rss/search?q={quote(q)}&hl=en-IN&gl=IN&ceid=IN:en"
+        try:
+            res = requests.get(rss_url, headers=headers, timeout=8)
+            res.raise_for_status()
+            soup = BeautifulSoup(res.content, "xml")
+            items = soup.find_all("item")
+
+            for item in items:
+                if len(results) >= max_results:
+                    break
+                title = item.find("title").get_text(" ", strip=True) if item.find("title") else ""
+                google_url = item.find("link").get_text(strip=True) if item.find("link") else ""
+                source_tag = item.find("source")
+                source_name = source_tag.get_text(" ", strip=True) if source_tag else "News Source"
+                pub_date = item.find("pubDate").get_text(" ", strip=True) if item.find("pubDate") else ""
+                desc_tag = item.find("description")
+                desc = desc_tag.get_text(" ", strip=True) if desc_tag else ""
+                clean_desc = BeautifulSoup(desc, "html.parser").get_text(" ", strip=True) if desc else ""
+
+                direct_url = resolve_publisher_url(google_url)
+
+                if title and direct_url and direct_url not in seen_urls:
+                    seen_urls.add(direct_url)
+                    results.append({
+                        "title": title,
+                        "source": source_name,
+                        "url": direct_url,
+                        "published": pub_date,
+                        "content": f"{title} - {clean_desc}"[:1500]
+                    })
+        except Exception as e:
+            print(f"[WEB SEARCH] Failed for '{q}': {e}")
+
+    return results
 
 def parse_json_response(raw_text):
-    """
-    Safely extracts JSON from raw Gemini response text.
-    """
+    """Safely extracts JSON from raw Gemini response text."""
     if not raw_text:
-        raise ValueError("Empty response received from Gemini API.")
-        
-    # Remove markdown code fence if present
+        raise ValueError("Empty response from Gemini API.")
     cleaned = raw_text.strip()
     if cleaned.startswith("```"):
         cleaned = re.sub(r'^```(?:json)?\n?', '', cleaned, flags=re.IGNORECASE)
-        cleaned = re.sub(r'\n?```$', '', cleaned)
-        cleaned = cleaned.strip()
-        
-    # Attempt parsing
+        cleaned = re.sub(r'\n?```$', '', cleaned).strip()
     try:
-        data = json.loads(cleaned)
-        return data
+        return json.loads(cleaned)
     except json.JSONDecodeError:
-        # Regex search for json block if extraneous text exists
         match = re.search(r'(\{[\s\S]*\})', cleaned)
         if match:
             try:
                 return json.loads(match.group(1))
             except json.JSONDecodeError:
                 pass
-        raise ValueError(f"Failed to parse structured JSON from model output: {raw_text[:200]}...")
+        raise ValueError(f"Could not parse JSON output: {raw_text[:200]}")
 
 def analyze_claim(input_type, content, image_bytes=None, audio_bytes=None, audio_mime_type=None):
-    """
-    Main fact-checking routine using Gemini API with Search Grounding tool.
-    Supports text, URL scraping, image screenshots, and audio voice notes.
-    """
+    """Main fact-checking function powered by Gemini 3.6 Flash & Web Grounding."""
     client = get_client()
-    
-    # 1. Prepare input content & language context
+
     extracted_text = ""
     pil_image = None
     audio_part = None
-    
+
     if input_type == 'url':
         extracted_text = extract_text_from_url(content)
-        claim_context = f"Analyze the credibility of this news article / claim URL.\nURL: {content}\nExtracted Content:\n{extracted_text}"
+        claim_context = f"Analyze the credibility of this news article / URL:\nURL: {content}\nExtracted Content:\n{extracted_text}"
     elif input_type == 'image':
         if not image_bytes:
-            raise ValueError("No image provided for image analysis.")
+            raise ValueError("No image provided.")
         pil_image = Image.open(io.BytesIO(image_bytes))
-        claim_context = "Analyze the text, claim, post, or news screenshot in this image for truthfulness and authenticity."
+        claim_context = "Analyze the text, claim, or news screenshot in this image for truthfulness and digital tampering."
     elif input_type == 'audio':
         if not audio_bytes:
-            raise ValueError("No audio voice note data provided for analysis.")
-        mime = audio_mime_type or "audio/mp3"
-        if "webm" in mime:
-            mime = "audio/webm"
-        elif "wav" in mime:
-            mime = "audio/wav"
-        elif "ogg" in mime or "opus" in mime:
-            mime = "audio/ogg"
-        elif "mp4" in mime or "m4a" in mime:
-            mime = "audio/mp4"
-        elif "aac" in mime:
-            mime = "audio/aac"
-        else:
-            mime = "audio/mp3"
+            raise ValueError("No audio provided.")
+        raw_mime = (audio_mime_type or "audio/mp3").split(";")[0].strip().lower()
+        mime = "audio/mp3"
+        for ext in ["webm", "wav", "ogg", "mp4", "aac", "mpeg"]:
+            if ext in raw_mime:
+                mime = f"audio/{ext}"
+                break
         audio_part = types.Part.from_bytes(data=audio_bytes, mime_type=mime)
-        claim_context = "Listen to this audio voice note / spoken message carefully. Transcribe and verify the spoken claim for truthfulness, detecting viral WhatsApp rumors, fake government policies, or scaremongering."
-    else:  # text
+        claim_context = "Listen to this voice note carefully. Transcribe and verify the spoken claim for truthfulness."
+    else:
         extracted_text = content
         claim_context = f"Analyze the credibility of the following claim / news story:\n\"{content}\""
-        
+
     detected_lang = detect_language(extracted_text or content)
-    
-    # 2. Construct Fact-Checking System Prompt
+
+    # 1. Perform Web Evidence Search
+    web_sources = search_web_sources(extracted_text or content, max_results=4)
+    web_evidence = ""
+    if web_sources:
+        web_evidence = "\n\nVERIFIED WEB EVIDENCE:\n"
+        for i, s in enumerate(web_sources, 1):
+            web_evidence += f"SOURCE {i}: {s['title']} ({s['source']})\nURL: {s['url']}\nCONTENT: {s['content']}\n\n"
+    else:
+        web_evidence = "\n\nWEB EVIDENCE: No direct web search hit found. Use your general factual knowledge, domain logic, and numerical checks to evaluate."
+
+    # 2. System Instruction
+    current_date = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d %B %Y")
+
+    if detected_lang == "Hindi":
+        lang_directive = (
+            "MANDATORY LANGUAGE RULE: The user input is in DEVANAGARI HINDI (हिंदी).\n"
+            "You MUST write 'claim_text', 'reasoning', and ALL items in 'verdict_reasons' strictly in DEVANAGARI HINDI script.\n"
+            "Do NOT use English language or Latin script for reasoning or verdict_reasons.\n"
+        )
+    elif detected_lang == "Hinglish":
+        lang_directive = (
+            "MANDATORY LANGUAGE RULE: The user input is in HINGLISH (Hindi language spoken in Roman/Latin script).\n"
+            "You MUST write 'claim_text', 'reasoning', and ALL items in 'verdict_reasons' strictly in HINGLISH (Hindi words written in Latin alphabet, e.g., 'Yeh claim bilkul jhooth hai kyunki...').\n"
+            "CRITICAL: Do NOT translate the explanation to English! Keep the entire explanation in conversational Roman Hindi/Hinglish.\n"
+            "Example Hinglish output:\n"
+            "reasoning: 'Yeh claim bilkul galat aur fake hai. Bharat me petrol ka rate ₹90-₹110 per litre hai, ₹2000 per litre ki khabar ek viral afwah hai.'\n"
+            "verdict_reasons: ['Petrol ka actual price ₹90 se ₹110 ke beech hai, ₹2000 per litre bilkul galat rate hai.', 'Oil companies ne aisa koi price hike announce nahi kiya.']\n"
+        )
+    else:
+        lang_directive = (
+            "MANDATORY LANGUAGE RULE: The user input is in ENGLISH.\n"
+            "Write 'claim_text', 'reasoning', and 'verdict_reasons' strictly in clear English.\n"
+        )
+
     system_instruction = (
-        "You are an expert, unbiased AI Fact-Checker specializing in global news, digital rumors, social media claims, "
-        "and regional Indian context (including Hindi, Hinglish, viral WhatsApp audio voice notes, fake government notices, and clickbait).\n"
-        "Your task is to thoroughly verify the provided claim/image/link/audio message using web search grounding and critical logical reasoning.\n\n"
-        "RULES FOR YOUR RESPONSE:\n"
-        "1. You MUST respond with ONLY a valid, raw JSON object (no markdown intro or extra commentary).\n"
-        "2. Verdict MUST be one of: \"Real\", \"Fake\", \"Misleading\", \"Unverifiable\".\n"
-        "3. Confidence score MUST be an integer between 0 and 100.\n"
-        "4. Language detected MUST be one of: \"English\", \"Hindi\", \"Hinglish\", or appropriate language.\n"
-        "5. Claim text MUST be a concise summary or transcription (1-2 sentences) of the exact claim being reviewed. For audio or image inputs, transcribe or state what was spoken/shown (e.g. 'Muffled/unclear audio clip with no clear actionable claim' or 'Viral audio claim regarding...').\n"
-        "6. Reasoning MUST be concise (2-4 sentences) explaining the fact check, background context, and truth status in clear, objective terms. If audio was provided, briefly mention what was spoken in the voice message.\n"
-        "7. Manipulation techniques MUST be a list of tags (0 to 4 max) if present (e.g., [\"Emotional Language\", \"False Urgency\", \"Fabricated Quote\", \"Out of Context Claim\", \"Manipulated Image\", \"Voice Note Rumor\"]). If none found, return an empty list [].\n"
-        "8. Sources MUST be a list of 1 to 4 credible source objects used for verification: [{\"title\": \"Source Name / Fact Check Title\", \"url\": \"https://...\"}]. If specific sources aren't available, provide domain recommendations.\n\n"
-        "JSON SCHEMA SPECIFICATION:\n"
+        "You are an unbiased AI Fact-Checker specializing in global news, digital rumors, social media claims, "
+        "regional Indian context, Hindi, Hinglish, viral WhatsApp messages, and financial rates.\n\n"
+        f"CURRENT DATE: {current_date}.\n\n"
+        f"{lang_directive}\n"
+        "VERDICT DETERMINATION RULES:\n"
+        "1. Real: Reliable current sources or facts directly support the main claim.\n"
+        "2. Fake: Verified sources, factual logic, or standard market prices directly contradict the claim. "
+        "For example, absurd numbers (e.g. Gold at ₹15,201/g when standard price is ~₹7,000-₹8,000/g) or known scam forwards MUST be marked FAKE.\n"
+        "3. Misleading: Claim has a partial truth but distorts context or facts.\n"
+        "4. Unverifiable: ONLY use Unverifiable as a last resort if there is zero logical or factual way to evaluate the claim.\n"
+        "Do NOT mark absurd claims or false numerical rates as Unverifiable — evaluate them using factual domain knowledge.\n\n"
+        "RESPONSE RULES:\n"
+        "- Return ONLY a raw JSON object.\n"
+        "- Schema:\n"
         "{\n"
-        '  "claim_text": "Concise summary or transcription of the claim under review",\n'
+        f'  "claim_text": "Summary of claim in {detected_lang}",\n'
         '  "verdict": "Real | Fake | Misleading | Unverifiable",\n'
-        '  "confidence_score": 90,\n'
-        '  "language_detected": "English | Hindi | Hinglish",\n'
-        '  "reasoning": "Concise factual breakdown...",\n'
-        '  "manipulation_techniques": ["Emotional Language", "False Urgency"],\n'
-        '  "sources": [{"title": "PIB Fact Check / Alt News / Reuters", "url": "https://..."}]\n'
+        '  "confidence_score": 95,\n'
+        f'  "language_detected": "{detected_lang}",\n'
+        f'  "reasoning": "Clear explanation written strictly in {detected_lang}",\n'
+        '  "verdict_reasons": [\n'
+        f'    "Bullet point 1 strictly in {detected_lang}",\n'
+        f'    "Bullet point 2 strictly in {detected_lang}",\n'
+        f'    "Bullet point 3 strictly in {detected_lang}"\n'
+        '  ],\n'
+        '  "manipulation_techniques": ["Exaggerated Numbers", "False Urgency"],\n'
+        '  "sources": [{"title": "Source Title", "url": "https://..."}]\n'
         "}"
     )
-    
-    user_prompt = f"FACT-CHECK REQUEST ({input_type.upper()}):\n{claim_context}\n\nDetected Primary Language Context: {detected_lang}.\n"
-    if detected_lang in ['Hindi', 'Hinglish']:
-        user_prompt += "Note: The claim/audio may be in Hindi/Hinglish. Please understand the cultural context, local idioms, and viral rumors, but provide clear reasoning in English or easy Hinglish for the user.\n"
-    
-    # 3. Call Model API
+
+    user_prompt = (
+        f"FACT-CHECK REQUEST ({input_type.upper()}):\n{claim_context}\n\n"
+        f"MUST RESPOND STRICTLY IN LANGUAGE: {detected_lang}\n"
+        f"DO NOT TRANSLATE TO ENGLISH IF LANGUAGE IS HINGLISH OR HINDI!\n\n"
+        f"{web_evidence}"
+    )
+
     contents = []
     if pil_image:
         contents.append(pil_image)
     if audio_part:
         contents.append(audio_part)
     contents.append(user_prompt)
-    
-    # List active, supported models in order of priority
+
     models_to_try = [
         DEFAULT_MODEL,
+        "gemini-3.6-flash",
         "gemini-3.5-flash",
-        "gemini-3.5-flash-lite",
-        "gemini-3.1-flash-lite",
-        "gemini-flash-lite-latest",
-        "gemini-3.6-flash"
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
     ]
     models_to_try = list(dict.fromkeys(models_to_try))
-    
-    last_error = None
-    response_text = None
-    grounding_sources = []
-    
-    for model_name in models_to_try:
-        try:
-            # Try with Google Search Grounding first
-            config_with_tools = types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=0.1,
-                tools=[types.Tool(google_search=types.GoogleSearch())],
-            )
-            try:
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=contents,
-                    config=config_with_tools
-                )
-            except Exception as tool_err:
-                # If grounding tool raises error (e.g. quota limit), retry without tools
-                config_no_tools = types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    temperature=0.1,
-                )
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=contents,
-                    config=config_no_tools
-                )
 
-            response_text = response.text
-            
-            # Extract grounding metadata if provided by Gemini Search Tool
-            try:
-                if hasattr(response, 'candidates') and response.candidates:
-                    candidate = response.candidates[0]
-                    if hasattr(candidate, 'grounding_metadata') and candidate.grounding_metadata:
-                        gm = candidate.grounding_metadata
-                        if hasattr(gm, 'grounding_chunks') and gm.grounding_chunks:
-                            for chunk in gm.grounding_chunks:
-                                if hasattr(chunk, 'web') and chunk.web:
-                                    web_title = getattr(chunk.web, 'title', '') or 'Fact Check Source'
-                                    web_url = getattr(chunk.web, 'uri', '')
-                                    if web_url and not any(s['url'] == web_url for s in grounding_sources):
-                                        grounding_sources.append({"title": web_title, "url": web_url})
-            except Exception:
-                pass
-                
-            break  # Success
+    response_text = None
+    last_error = None
+    for m in models_to_try:
+        try:
+            cfg = types.GenerateContentConfig(system_instruction=system_instruction)
+            resp = client.models.generate_content(model=m, contents=contents, config=cfg)
+            response_text = resp.text
+            break
         except Exception as e:
             last_error = e
-            continue
-            
-    if not response_text:
-        raise RuntimeError(f"Gemini API Call failed across available models: {str(last_error)}")
-        
-    # 4. Parse JSON Response
-    parsed = parse_json_response(response_text)
-    
-    # Merge grounding sources if response didn't include enough sources
-    if grounding_sources:
-        existing_urls = {s.get('url') for s in parsed.get('sources', []) if isinstance(s, dict)}
-        for gs in grounding_sources[:3]:
-            if gs['url'] not in existing_urls:
-                parsed.setdefault('sources', []).append(gs)
-                
-    # Normalize schema & defaults
-    verdict = parsed.get('verdict', 'Unverifiable')
-    if verdict not in ['Real', 'Fake', 'Misleading', 'Unverifiable']:
-        verdict = 'Unverifiable'
-        
-    confidence = parsed.get('confidence_score', 75)
-    try:
-        confidence = int(confidence)
-        confidence = max(0, min(100, confidence))
-    except (ValueError, TypeError):
-        confidence = 75
-        
-    claim_text = parsed.get('claim_text', '').strip()
-    if not claim_text:
-        if input_type == 'audio':
-            claim_text = f"Audio Voice Note ({content})"
-        elif input_type == 'image':
-            claim_text = f"Screenshot Media Content ({content})"
-        elif input_type == 'url':
-            claim_text = f"News Article URL: {content}"
-        else:
-            claim_text = content
 
-    result = {
-        'claim_text': claim_text,
-        'verdict': verdict,
-        'confidence_score': confidence,
-        'language_detected': parsed.get('language_detected', detected_lang),
-        'reasoning': parsed.get('reasoning', 'Fact checking analysis completed based on available web references.'),
-        'manipulation_techniques': parsed.get('manipulation_techniques', []),
-        'sources': parsed.get('sources', [])
+    if not response_text:
+        raise RuntimeError(f"Gemini API error across models: {last_error}")
+
+    parsed = parse_json_response(response_text)
+
+    parsed_sources = parsed.get("sources", [])
+    if not isinstance(parsed_sources, list):
+        parsed_sources = []
+    if web_sources:
+        existing_urls = {s.get("url") for s in parsed_sources if isinstance(s, dict)}
+        for ws in web_sources:
+            if ws["url"] not in existing_urls:
+                parsed_sources.append({"title": ws["title"], "url": ws["url"]})
+    parsed["sources"] = parsed_sources[:4]
+
+    verdict = parsed.get("verdict", "Unverifiable")
+    if verdict not in ["Real", "Fake", "Misleading", "Unverifiable"]:
+        verdict = "Unverifiable"
+
+    try:
+        conf = int(parsed.get("confidence_score", 85))
+        conf = max(0, min(100, conf))
+    except (ValueError, TypeError):
+        conf = 85
+
+    claim_txt = parsed.get("claim_text", "").strip() or content
+    verdict_reasons = parsed.get("verdict_reasons", [])
+    if not isinstance(verdict_reasons, list) or not verdict_reasons:
+        verdict_reasons = []
+
+    return {
+        "claim_text": claim_txt,
+        "verdict": verdict,
+        "confidence_score": conf,
+        "language_detected": parsed.get("language_detected", detected_lang),
+        "reasoning": parsed.get("reasoning", "Analysis completed based on factual knowledge and web grounding."),
+        "verdict_reasons": verdict_reasons,
+        "manipulation_techniques": parsed.get("manipulation_techniques", []),
+        "sources": parsed.get("sources", [])
     }
-    
-    return result
