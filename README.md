@@ -1,4 +1,4 @@
-# TruthLens — AI-Powered Fake News Detection System 🔍
+# EeraFact — AI-Powered Fake News Detection System 🔍
 
 A web application designed to detect fake news, viral rumors, sensationalist posts, and misleading claims using **Python Flask**, **React (Vite)**, **Google Gemini 2.5 Flash API**, and **SQLite**.
 

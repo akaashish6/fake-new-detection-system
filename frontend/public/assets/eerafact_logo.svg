@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Background Shield Gradient -->
+    <linearGradient id="efGradPrimary" x1="20" y1="16" x2="140" y2="148" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="45%" stop-color="#3b82f6" />
+      <stop offset="75%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+
+    <!-- Inner Dark Glass Gradient -->
+    <linearGradient id="efInnerGlass" x1="80" y1="28" x2="80" y2="136" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0b1329" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#050a18" stop-opacity="0.98" />
+    </linearGradient>
+
+    <!-- Cyan Glow -->
+    <linearGradient id="efCyanGlow" x1="40" y1="40" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#06b6d4" />
+    </linearGradient>
+
+    <!-- Check Accent Gradient -->
+    <linearGradient id="efCheckGrad" x1="70" y1="80" x2="118" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="50%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#60a5fa" />
+    </linearGradient>
+
+    <!-- Glow Filter -->
+    <filter id="efGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="subtleNeon" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Outer Ambient Shield Glow Aura -->
+  <path
+    d="M80 14 L134 38 V80 C134 114 80 146 80 146 C80 146 26 114 26 80 V38 L80 14 Z"
+    fill="url(#efGradPrimary)"
+    opacity="0.25"
+    filter="url(#efGlow)"
+  />
+
+  <!-- Main Shield Body -->
+  <path
+    d="M80 16 L132 39 V78 C132 111 80 142 80 142 C80 142 28 111 28 78 V39 L80 16 Z"
+    fill="url(#efInnerGlass)"
+    stroke="url(#efGradPrimary)"
+    stroke-width="3.5"
+    stroke-linejoin="round"
+  />
+
+  <!-- Inner Cyber Grid Accent Rings -->
+  <path
+    d="M80 26 L122 45 V76 C122 102 80 128 80 128 C80 128 38 102 38 76 V45 L80 26 Z"
+    stroke="url(#efCyanGlow)"
+    stroke-width="1.2"
+    stroke-dasharray="4 3"
+    opacity="0.4"
+    fill="none"
+  />
+
+  <!-- Futuristic Monogram: "E" + "F" Interlocking Structure -->
+  <!-- Vertical Spine of E / F -->
+  <rect x="50" y="44" width="11" height="66" rx="5.5" fill="#ffffff" />
+
+  <!-- E Top Wing -->
+  <path d="M50 49.5 C50 46.5 52.5 44 55.5 44 L102 44 C105 44 107.5 46.5 107.5 49.5 C107.5 52.5 105 55 102 55 L55.5 55 C52.5 55 50 52.5 50 49.5 Z" fill="#ffffff" />
+  
+  <!-- E / F Middle Wing -->
+  <path d="M50 74 C50 71 52.5 68.5 55.5 68.5 L90 68.5 C93 68.5 95.5 71 95.5 74 C95.5 77 93 79.5 90 79.5 L55.5 79.5 C52.5 79.5 50 77 50 74 Z" fill="#ffffff" />
+
+  <!-- E Bottom Wing -->
+  <path d="M50 104.5 C50 101.5 52.5 99 55.5 99 L82 99 C85 99 87.5 101.5 87.5 104.5 C87.5 107.5 85 110 82 110 L55.5 110 C52.5 110 50 107.5 50 104.5 Z" fill="#38bdf8" />
+
+  <!-- Dynamic Verification Fact Checkmark (Faceted Overlay) -->
+  <path
+    d="M74 86 L88 100 L118 64"
+    stroke="url(#efCheckGrad)"
+    stroke-width="7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    filter="url(#subtleNeon)"
+  />
+
+  <!-- Corner Radar Tech Nodes -->
+  <circle cx="80" cy="22" r="2.5" fill="#38bdf8" />
+  <circle cx="126" cy="42" r="2.5" fill="#818cf8" />
+  <circle cx="34" cy="42" r="2.5" fill="#38bdf8" />
+  <circle cx="80" cy="136" r="3" fill="#10b981" filter="url(#subtleNeon)" />
+</svg>

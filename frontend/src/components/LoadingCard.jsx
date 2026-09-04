@@ -6,7 +6,7 @@ export default function LoadingCard() {
 
   const steps = [
     'Parsing input & detecting language context (English/Hindi/Hinglish)...',
-    'Sending request to TruthLens AI Engine...',
+    'Sending request to EeraFact AI Engine...',
     'Performing real-time Search grounding & cross-referencing...',
     'Detecting manipulation techniques & synthesizing verdict report...'
   ];
@@ -14,7 +14,7 @@ export default function LoadingCard() {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
-    }, 1800);
+    }, 450);
     return () => clearInterval(timer);
   }, [steps.length]);
 
@@ -25,7 +25,7 @@ export default function LoadingCard() {
       </div>
 
       <h3 style={{ fontSize: '1.4rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
-        Analyzing Claim with TruthLens AI
+        Analyzing Claim with EeraFact AI
       </h3>
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
         Fact-checking news, logical context, and cross-referencing web sources...

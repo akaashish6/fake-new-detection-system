@@ -101,17 +101,18 @@ def validate_url(url):
 def validate_image(image_bytes):
     """
     Validate that uploaded bytes represent a readable image.
+    NOTE: Do NOT call image.verify() — it is destructive and closes the
+    internal file handle, making the image object unusable afterward.
+    Instead, open + load() to fully decode the image pixels as a validity check.
     """
     if not image_bytes:
         raise ValueError("The uploaded image is empty.")
 
     try:
-        image = Image.open(
-            __import__("io").BytesIO(image_bytes)
-        )
-
-        # Force PIL to actually read the image
-        image.verify()
+        import io as _io
+        image = Image.open(_io.BytesIO(image_bytes))
+        # load() decodes the pixel data — a real validity check that is safe
+        image.load()
 
     except UnidentifiedImageError:
         raise ValueError(
@@ -152,7 +153,7 @@ def serve_frontend(path):
         )
 
     return jsonify({
-        "name": "TruthLens Fake News Detection API",
+        "name": "EeraFact Fake News Detection API",
         "status": "running",
         "frontend_dev": "http://localhost:5173"
     })
@@ -340,94 +341,50 @@ def check_claim():
         )
 
         try:
-
-            result = gemini_service.analyze_claim(
-                input_type,
-                content,
-                image_bytes=image_bytes,
-                audio_bytes=audio_bytes,
-                audio_mime_type=audio_mime_type
-            )
-
-        except ValueError as exc:
-
-            logger.warning(
-                "Fact-check validation error: %s",
-                exc
-            )
-
-            return error_response(
-                str(exc),
-                "FACT_CHECK_INPUT_ERROR",
-                400
-            )
-
-        except RuntimeError as exc:
-
-            logger.error(
-                "Fact-check service error: %s",
-                exc
-            )
-
-            return error_response(
-                "The fact-checking service could not complete the verification.",
-                "FACT_CHECK_SERVICE_ERROR",
-                503
-            )
-
-        except Exception:
-
-            logger.exception(
-                "Unexpected fact-checking error"
-            )
-
-            return error_response(
-                "An unexpected error occurred while analyzing the claim.",
-                "FACT_CHECK_INTERNAL_ERROR",
-                500
-            )
-
-
-        # =================================================
-        # IMAGE FORENSICS
-        # =================================================
-
-        forensics_data = None
-
-        if (
-            input_type == "image"
-            and image_bytes
-        ):
-
-            try:
-
-                forensics_data = (
-                    image_forensics.perform_forensic_ela(
+            if input_type == "image" and image_bytes:
+                from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+                with ThreadPoolExecutor(max_workers=2) as executor:
+                    future_gemini = executor.submit(
+                        gemini_service.analyze_claim,
+                        input_type,
+                        content,
+                        image_bytes=image_bytes,
+                        audio_bytes=audio_bytes,
+                        audio_mime_type=audio_mime_type
+                    )
+                    future_forensics = executor.submit(
+                        image_forensics.perform_forensic_ela,
                         image_bytes
                     )
+                    try:
+                        result = future_gemini.result(timeout=90)
+                    except FuturesTimeoutError:
+                        raise RuntimeError("The AI analysis timed out. Please try again.")
+                    try:
+                        result["forensics"] = future_forensics.result(timeout=30)
+                    except Exception as fe:
+                        logger.warning("Image forensic analysis failed: %s", fe)
+                        result["forensics"] = {
+                            "available": False,
+                            "error": "Image forensic analysis could not be completed."
+                        }
+            else:
+                result = gemini_service.analyze_claim(
+                    input_type,
+                    content,
+                    image_bytes=image_bytes,
+                    audio_bytes=audio_bytes,
+                    audio_mime_type=audio_mime_type
                 )
-
-                result["forensics"] = (
-                    forensics_data
-                )
-
-            except Exception:
-
-                logger.exception(
-                    "Image forensic analysis failed"
-                )
-
-                # IMPORTANT:
-                # Do not destroy an otherwise successful
-                # fact-check just because ELA failed.
-
-                result["forensics"] = {
-                    "available": False,
-                    "error": (
-                        "Image forensic analysis "
-                        "could not be completed."
-                    )
-                }
+        except ValueError as exc:
+            logger.warning("Fact-check validation error: %s", exc)
+            return error_response(str(exc), "FACT_CHECK_INPUT_ERROR", 400)
+        except RuntimeError as exc:
+            logger.error("Fact-check service error: %s", exc)
+            return error_response(str(exc), "FACT_CHECK_SERVICE_ERROR", 503)
+        except Exception as exc:
+            logger.exception("Unexpected fact-checking error: %s", exc)
+            return error_response(f"Verification error: {str(exc)}", "FACT_CHECK_INTERNAL_ERROR", 500)
 
 
         # =================================================
@@ -463,7 +420,7 @@ def check_claim():
                     "sources",
                     []
                 ),
-                forensics=forensics_data,
+                forensics=result.get("forensics"),
                 claim_text=result.get(
                     "claim_text"
                 ),

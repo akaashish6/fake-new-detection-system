@@ -117,11 +117,11 @@ export default function AboutView({ onStartScan }) {
         </div>
 
         <h1 className="about-hero-title">
-          TruthLens AI <span className="hero-gradient-text-pink">Intelligence System</span>
+          EeraFact AI <span className="hero-gradient-text-pink">Intelligence System</span>
         </h1>
 
         <p className="about-hero-description">
-          TruthLens is an end-to-end, multi-modal misinformation detection system designed to fight fake news,
+          EeraFact is an end-to-end, multi-modal misinformation detection system designed to fight fake news,
           doctored media, manipulated quotes, and unverified viral rumors across digital channels.
         </p>
 
@@ -151,7 +151,7 @@ export default function AboutView({ onStartScan }) {
           <span className="dot" />
         </div>
         <p className="section-subtext">
-          Explore all the intelligent modules built into TruthLens to verify claims and analyze signals.
+          Explore all the intelligent modules built into EeraFact to verify claims and analyze signals.
         </p>
       </div>
 
@@ -210,7 +210,7 @@ export default function AboutView({ onStartScan }) {
         <div className="tech-pills-grid">
           {techStack.map((tech, idx) => (
             <div key={idx} className="tech-pill-box">
-              <span className="tech-dot" style={{ background: tech.color, boxShadow: `0 0 10px ${tech.color}` }} />
+              <span className="tech-dot" style={{ background: tech.color }} />
               <div>
                 <div className="tech-name">{tech.name}</div>
                 <div className="tech-role">{tech.role}</div>
@@ -224,7 +224,7 @@ export default function AboutView({ onStartScan }) {
       <div className="about-cta-container">
         <div className="glass-panel about-cta-card">
           <h3 className="cta-title">Ready to verify news or claims?</h3>
-          <p className="cta-desc">Test any text, URL, screenshot or voice note with TruthLens AI Detector.</p>
+          <p className="cta-desc">Test any text, URL, screenshot or voice note with EeraFact AI Detector.</p>
           <button type="button" className="submit-btn cta-btn" onClick={onStartScan}>
             <span>Launch Detector Engine</span>
             <ArrowRight size={20} />

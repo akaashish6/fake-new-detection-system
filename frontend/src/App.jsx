@@ -27,7 +27,14 @@ export default function App() {
       const result = await response.json();
 
       if (!response.ok || !result.success) {
-        throw new Error(result.error || 'Failed to complete fact check query.');
+        const errObj = result.error;
+        let msg = 'Failed to complete fact check query.';
+        if (typeof errObj === 'string') {
+          msg = errObj;
+        } else if (errObj && typeof errObj === 'object') {
+          msg = errObj.message || errObj.code || JSON.stringify(errObj);
+        }
+        throw new Error(msg);
       }
 
       setScanResult(result.data);
@@ -100,7 +107,7 @@ export default function App() {
                     <InputForm onSubmit={handleFormSubmit} isLoading={isLoading} />
                   </div>
 
-                  {/* RIGHT: TRUTHLENS IN ACTION & 3D GLOBE GRAPHIC */}
+                  {/* RIGHT: EERAFACT IN ACTION & 3D GLOBE GRAPHIC */}
                   <div className="detector-sidebar-column">
                     {/* 3D Wireframe Globe & Shield Graphic */}
                     <div className="shield-globe-graphic">
@@ -186,9 +193,9 @@ export default function App() {
                       </svg>
                     </div>
 
-                    {/* TRUTHLENS IN ACTION Card */}
+                    {/* EERAFACT IN ACTION Card */}
                     <div className="glass-panel sidebar-action-card">
-                      <h4 className="sidebar-card-title">TRUTHLENS IN ACTION</h4>
+                      <h4 className="sidebar-card-title">EERAFACT IN ACTION</h4>
 
                       <div className="sidebar-stats-list">
                         <div className="sidebar-stat-item">
@@ -235,12 +242,12 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* BOTTOM SECTION: HOW TRUTHLENS WORKS */}
+                {/* BOTTOM SECTION: HOW EERAFACT WORKS */}
                 <div id="how-it-works" className="how-it-works-container">
                   <div className="section-divider-title">
                     <span className="dot" />
                     <span className="divider-line" />
-                    <h3 className="how-works-heading">HOW TRUTHLENS WORKS</h3>
+                    <h3 className="how-works-heading">HOW EERAFACT WORKS</h3>
                     <span className="divider-line" />
                     <span className="dot" />
                   </div>

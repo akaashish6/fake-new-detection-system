@@ -47,20 +47,7 @@ def init_db():
 def save_scan(input_type, input_content, language, verdict, confidence_score, reasoning, manipulation_techniques, sources, forensics=None, claim_text=None, verdict_reasons=None):
     conn = get_db_connection()
     cursor = conn.cursor()
-    
-    try:
-        cursor.execute("ALTER TABLE scans ADD COLUMN forensics TEXT")
-    except Exception:
-        pass
-    try:
-        cursor.execute("ALTER TABLE scans ADD COLUMN claim_text TEXT")
-    except Exception:
-        pass
-    try:
-        cursor.execute("ALTER TABLE scans ADD COLUMN verdict_reasons TEXT")
-    except Exception:
-        pass
-    
+
     final_claim_text = claim_text or input_content
     
     # Store JSON strings for lists & dicts

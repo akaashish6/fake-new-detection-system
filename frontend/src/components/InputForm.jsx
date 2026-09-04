@@ -529,7 +529,7 @@ export default function InputForm({ onSubmit, isLoading }) {
 
         <button type="submit" className="submit-btn" disabled={isLoading || (inputType === 'audio' && !audioFile)}>
           <Sparkles size={20} />
-          {isLoading ? 'Processing Voice/Text Fact Check...' : 'Analyze with TruthLens AI'}
+          {isLoading ? 'Processing...' : 'Analyze with EeraFact AI'}
         </button>
       </form>
     </div>

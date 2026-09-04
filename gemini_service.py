@@ -2,24 +2,67 @@ import os
 import re
 import json
 import base64
+import hashlib
 import requests
+import threading
 from urllib.parse import urlparse, quote
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from bs4 import BeautifulSoup
 from PIL import Image
 import io
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError
 from google import genai
 from google.genai import types
 
 # Default Gemini flagship model
 DEFAULT_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
 
+# ─────────────────────────────────────────────────────────────────────────────
+# In-memory result cache  (TTL = 60 minutes)
+# ─────────────────────────────────────────────────────────────────────────────
+_cache: dict = {}          # key → {"result": ..., "expires_at": datetime}
+_cache_lock = threading.Lock()
+CACHE_TTL_MINUTES = 60
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Remember last working model so we skip known-bad ones quickly
+# ─────────────────────────────────────────────────────────────────────────────
+_last_good_model: str | None = None
+_model_lock = threading.Lock()
+
+
+def _cache_key(input_type: str, content: str) -> str:
+    raw = f"{input_type}::{content.strip().lower()}"
+    return hashlib.sha256(raw.encode()).hexdigest()
+
+
+def _cache_get(key: str):
+    with _cache_lock:
+        entry = _cache.get(key)
+        if entry and datetime.now() < entry["expires_at"]:
+            return entry["result"]
+        if entry:
+            del _cache[key]
+    return None
+
+
+def _cache_set(key: str, result: dict):
+    with _cache_lock:
+        _cache[key] = {
+            "result": result,
+            "expires_at": datetime.now() + timedelta(minutes=CACHE_TTL_MINUTES),
+        }
+
+
 def get_client():
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        raise ValueError("GEMINI_API_KEY is not set. Please configure your .env file with a valid Gemini API key.")
+        raise ValueError(
+            "GEMINI_API_KEY is not set. Please configure your .env file with a valid Gemini API key."
+        )
     return genai.Client(api_key=api_key)
+
 
 def detect_language(text):
     """Detect Hindi script, Hinglish keywords, or English."""
@@ -42,13 +85,14 @@ def detect_language(text):
         return "Hinglish"
     return "English"
 
+
 def extract_text_from_url(url):
     """Scrapes news article title and snippet from URL."""
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     }
     try:
-        response = requests.get(url, headers=headers, timeout=8)
+        response = requests.get(url, headers=headers, timeout=5)  # reduced from 8s → 5s
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         title = soup.title.string.strip() if soup.title and soup.title.string else ""
@@ -59,6 +103,7 @@ def extract_text_from_url(url):
         return f"URL Title: {title}\nMeta Description: {meta_desc}\nSnippet: {snippet}".strip()
     except Exception as e:
         return f"URL: {url} (Scrape note: {str(e)})"
+
 
 def extract_search_query(text):
     """Clean text to extract key search keywords for web search."""
@@ -80,6 +125,7 @@ def extract_search_query(text):
     filtered = [w for w in words if w.lower() not in stopwords]
     return " ".join(filtered[:6]) if filtered else " ".join(words[:6])
 
+
 def resolve_publisher_url(encoded_url):
     """Try to decode Google News redirect URL to direct publisher link."""
     if not encoded_url or "news.google.com" not in encoded_url:
@@ -99,8 +145,47 @@ def resolve_publisher_url(encoded_url):
         pass
     return encoded_url
 
+
+def _fetch_rss(q: str, headers: dict, max_results: int, seen_urls: set) -> list:
+    """Fetch one RSS query and return parsed result items."""
+    rss_url = f"https://news.google.com/rss/search?q={quote(q)}&hl=en-IN&gl=IN&ceid=IN:en"
+    results = []
+    try:
+        res = requests.get(rss_url, headers=headers, timeout=3)  # reduced to 3s for speed
+        res.raise_for_status()
+        soup = BeautifulSoup(res.content, "xml")
+        items = soup.find_all("item")
+
+        for item in items:
+            if len(results) >= max_results:
+                break
+            title = item.find("title").get_text(" ", strip=True) if item.find("title") else ""
+            google_url = item.find("link").get_text(strip=True) if item.find("link") else ""
+            source_tag = item.find("source")
+            source_name = source_tag.get_text(" ", strip=True) if source_tag else "News Source"
+            pub_date = item.find("pubDate").get_text(" ", strip=True) if item.find("pubDate") else ""
+            desc_tag = item.find("description")
+            desc = desc_tag.get_text(" ", strip=True) if desc_tag else ""
+            clean_desc = BeautifulSoup(desc, "html.parser").get_text(" ", strip=True) if desc else ""
+
+            direct_url = resolve_publisher_url(google_url)
+
+            if title and direct_url and direct_url not in seen_urls:
+                seen_urls.add(direct_url)
+                results.append({
+                    "title": title,
+                    "source": source_name,
+                    "url": direct_url,
+                    "published": pub_date,
+                    "content": f"{title} - {clean_desc}"[:1500]
+                })
+    except Exception as e:
+        print(f"[WEB SEARCH] Failed for '{q}': {e}")
+    return results
+
+
 def search_web_sources(query, max_results=4):
-    """Search Google News RSS for real-time web verification sources."""
+    """Search Google News RSS — runs both queries IN PARALLEL for speed."""
     search_term = extract_search_query(query)
     if not search_term:
         return []
@@ -110,51 +195,32 @@ def search_web_sources(query, max_results=4):
     }
 
     results = []
-    seen_urls = set()
+    seen_urls: set = set()
 
-    # Try specific query first, then clean topic query if needed
     queries = [search_term]
     topic_only = re.sub(r'\b\d+\b', '', search_term).strip()
     if topic_only and topic_only != search_term and len(topic_only) > 3:
         queries.append(topic_only)
 
-    for q in queries:
-        if len(results) >= max_results:
-            break
-        rss_url = f"https://news.google.com/rss/search?q={quote(q)}&hl=en-IN&gl=IN&ceid=IN:en"
-        try:
-            res = requests.get(rss_url, headers=headers, timeout=8)
-            res.raise_for_status()
-            soup = BeautifulSoup(res.content, "xml")
-            items = soup.find_all("item")
+    # ── Run all RSS queries IN PARALLEL ──────────────────────────────────────
+    try:
+        with ThreadPoolExecutor(max_workers=len(queries)) as executor:
+            futures = {executor.submit(_fetch_rss, q, headers, max_results, seen_urls): q for q in queries}
+            for future in as_completed(futures, timeout=3.5):
+                try:
+                    batch = future.result()
+                    for item in batch:
+                        if len(results) >= max_results:
+                            break
+                        if item["url"] not in {r["url"] for r in results}:
+                            results.append(item)
+                except Exception:
+                    pass
+    except Exception as e:
+        print(f"[WEB SEARCH TIMEOUT/SKIP]: {e}")
 
-            for item in items:
-                if len(results) >= max_results:
-                    break
-                title = item.find("title").get_text(" ", strip=True) if item.find("title") else ""
-                google_url = item.find("link").get_text(strip=True) if item.find("link") else ""
-                source_tag = item.find("source")
-                source_name = source_tag.get_text(" ", strip=True) if source_tag else "News Source"
-                pub_date = item.find("pubDate").get_text(" ", strip=True) if item.find("pubDate") else ""
-                desc_tag = item.find("description")
-                desc = desc_tag.get_text(" ", strip=True) if desc_tag else ""
-                clean_desc = BeautifulSoup(desc, "html.parser").get_text(" ", strip=True) if desc else ""
+    return results[:max_results]
 
-                direct_url = resolve_publisher_url(google_url)
-
-                if title and direct_url and direct_url not in seen_urls:
-                    seen_urls.add(direct_url)
-                    results.append({
-                        "title": title,
-                        "source": source_name,
-                        "url": direct_url,
-                        "published": pub_date,
-                        "content": f"{title} - {clean_desc}"[:1500]
-                    })
-        except Exception as e:
-            print(f"[WEB SEARCH] Failed for '{q}': {e}")
-
-    return results
 
 def parse_json_response(raw_text):
     """Safely extracts JSON from raw Gemini response text."""
@@ -175,22 +241,72 @@ def parse_json_response(raw_text):
                 pass
         raise ValueError(f"Could not parse JSON output: {raw_text[:200]}")
 
+
+def _build_models_list() -> list[str]:
+    """Return model priority list — put last known-good model first."""
+    global _last_good_model
+    base = [
+        DEFAULT_MODEL,
+        "gemini-3.6-flash",
+        "gemini-3.5-flash",
+        "gemini-flash-latest",
+    ]
+    # De-duplicate while preserving order
+    seen = set()
+    ordered = []
+    for m in base:
+        if m not in seen:
+            seen.add(m)
+            ordered.append(m)
+
+    with _model_lock:
+        lgm = _last_good_model
+
+    if lgm and lgm in seen:
+        ordered.remove(lgm)
+        ordered.insert(0, lgm)
+
+    return ordered
+
+
 def analyze_claim(input_type, content, image_bytes=None, audio_bytes=None, audio_mime_type=None):
-    """Main fact-checking function powered by Gemini 3.6 Flash & Web Grounding."""
+    """Main fact-checking function powered by Gemini & Web Grounding — optimised for speed."""
+    global _last_good_model
+
+    # ── 1. Cache check (skip for image / audio — binary payloads) ──────────
+    cache_key = None
+    if input_type in ("text", "url"):
+        cache_key = _cache_key(input_type, content)
+        cached = _cache_get(cache_key)
+        if cached:
+            print(f"[CACHE HIT] Returning cached result for {input_type}")
+            return cached
+
     client = get_client()
 
     extracted_text = ""
     pil_image = None
     audio_part = None
 
+    # ── 2. Prepare input — URL scraping + web search IN PARALLEL ───────────
     if input_type == 'url':
-        extracted_text = extract_text_from_url(content)
+        # Run URL scrape and web search simultaneously
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            url_future = executor.submit(extract_text_from_url, content)
+            search_future = executor.submit(search_web_sources, content, 4)
+            extracted_text = url_future.result(timeout=10)
+            web_sources = search_future.result(timeout=10)
         claim_context = f"Analyze the credibility of this news article / URL:\nURL: {content}\nExtracted Content:\n{extracted_text}"
+
     elif input_type == 'image':
         if not image_bytes:
             raise ValueError("No image provided.")
         pil_image = Image.open(io.BytesIO(image_bytes))
+        # Eagerly load the image so the PIL object is fully decoded
+        pil_image.load()
         claim_context = "Analyze the text, claim, or news screenshot in this image for truthfulness and digital tampering."
+        web_sources = []  # No text available yet — Gemini will extract & verify from image directly
+
     elif input_type == 'audio':
         if not audio_bytes:
             raise ValueError("No audio provided.")
@@ -202,15 +318,16 @@ def analyze_claim(input_type, content, image_bytes=None, audio_bytes=None, audio
                 break
         audio_part = types.Part.from_bytes(data=audio_bytes, mime_type=mime)
         claim_context = "Listen to this voice note carefully. Transcribe and verify the spoken claim for truthfulness."
-    else:
+        web_sources = []  # audio — no useful text to search yet
+
+    else:  # text
         extracted_text = content
-        claim_context = f"Analyze the credibility of the following claim / news story:\n\"{content}\""
+        claim_context = f'Analyze the credibility of the following claim / news story:\n"{content}"'
+        web_sources = search_web_sources(content, max_results=4)
 
     detected_lang = detect_language(extracted_text or content)
 
-    # 1. Perform Web Evidence Search
-    web_sources = search_web_sources(extracted_text or content, max_results=4)
-    web_evidence = ""
+    # ── 3. Build web evidence block ─────────────────────────────────────────
     if web_sources:
         web_evidence = "\n\nVERIFIED WEB EVIDENCE:\n"
         for i, s in enumerate(web_sources, 1):
@@ -218,7 +335,7 @@ def analyze_claim(input_type, content, image_bytes=None, audio_bytes=None, audio
     else:
         web_evidence = "\n\nWEB EVIDENCE: No direct web search hit found. Use your general factual knowledge, domain logic, and numerical checks to evaluate."
 
-    # 2. System Instruction
+    # ── 4. System instruction ────────────────────────────────────────────────
     current_date = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%d %B %Y")
 
     if detected_lang == "Hindi":
@@ -287,14 +404,8 @@ def analyze_claim(input_type, content, image_bytes=None, audio_bytes=None, audio
         contents.append(audio_part)
     contents.append(user_prompt)
 
-    models_to_try = [
-        DEFAULT_MODEL,
-        "gemini-3.6-flash",
-        "gemini-3.5-flash",
-        "gemini-2.0-flash",
-        "gemini-1.5-flash",
-    ]
-    models_to_try = list(dict.fromkeys(models_to_try))
+    # ── 5. Call Gemini — try last-good model first ───────────────────────────
+    models_to_try = _build_models_list()
 
     response_text = None
     last_error = None
@@ -303,15 +414,20 @@ def analyze_claim(input_type, content, image_bytes=None, audio_bytes=None, audio
             cfg = types.GenerateContentConfig(system_instruction=system_instruction)
             resp = client.models.generate_content(model=m, contents=contents, config=cfg)
             response_text = resp.text
+            # Remember this model worked
+            with _model_lock:
+                _last_good_model = m
             break
         except Exception as e:
             last_error = e
+            print(f"[MODEL FALLBACK] {m} failed: {e}")
 
     if not response_text:
-        raise RuntimeError(f"Gemini API error across models: {last_error}")
+        raise RuntimeError(f"Gemini API error across all models: {last_error}")
 
     parsed = parse_json_response(response_text)
 
+    # ── 6. Merge sources ─────────────────────────────────────────────────────
     parsed_sources = parsed.get("sources", [])
     if not isinstance(parsed_sources, list):
         parsed_sources = []
@@ -337,7 +453,7 @@ def analyze_claim(input_type, content, image_bytes=None, audio_bytes=None, audio
     if not isinstance(verdict_reasons, list) or not verdict_reasons:
         verdict_reasons = []
 
-    return {
+    final_result = {
         "claim_text": claim_txt,
         "verdict": verdict,
         "confidence_score": conf,
@@ -347,3 +463,9 @@ def analyze_claim(input_type, content, image_bytes=None, audio_bytes=None, audio
         "manipulation_techniques": parsed.get("manipulation_techniques", []),
         "sources": parsed.get("sources", [])
     }
+
+    # ── 7. Store in cache (text & url only) ──────────────────────────────────
+    if cache_key:
+        _cache_set(cache_key, final_result)
+
+    return final_result

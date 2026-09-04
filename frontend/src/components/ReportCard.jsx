@@ -149,13 +149,13 @@ export default function ReportCard({ data, onReset }) {
   };
 
   const handleCopySummary = () => {
-    let summaryText = `[TruthLens Fact Check Report]\nVerdict: ${verdict}\nConfidence: ${confidence_score}%\nReasoning: ${reasoning}`;
+    let summaryText = `[EeraFact Fact Check Report]\nVerdict: ${verdict}\nConfidence: ${confidence_score}%\nReasoning: ${reasoning}`;
     navigator.clipboard.writeText(summaryText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const scanIdFormatted = data?.scan_id ? `#TR-${String(data.scan_id).padStart(5, '0')}` : '#TR-00142';
+  const scanIdFormatted = data?.scan_id ? `#FT-${String(data.scan_id).padStart(5, '0')}` : '#FT-00142';
   const timestampFormatted = data?.timestamp || new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
 
   const getVerdictSummaryText = (v, lang) => {
@@ -366,8 +366,8 @@ export default function ReportCard({ data, onReset }) {
     marginTop: '1rem',
     padding: '0.9rem 1rem',
     borderRadius: '12px',
-    background: 'rgba(0, 0, 0, 0.18)',
-    border: `1px solid ${theme.border}`,
+    background: 'var(--bg-surface)',
+    border: `1px solid var(--border-color)`,
     maxWidth: '520px'
   }}
 >
@@ -375,7 +375,7 @@ export default function ReportCard({ data, onReset }) {
     style={{
       fontSize: '0.78rem',
       fontWeight: 800,
-      color: '#ffffff',
+      color: 'var(--text-primary)',
       marginBottom: '0.55rem',
       letterSpacing: '0.04em'
     }}
@@ -393,7 +393,7 @@ export default function ReportCard({ data, onReset }) {
           gap: '0.5rem',
           fontSize: '0.78rem',
           lineHeight: 1.4,
-          color: '#cbd5e1'
+          color: 'var(--text-secondary)'
         }}
       >
         <CheckCircle2
@@ -553,6 +553,7 @@ export default function ReportCard({ data, onReset }) {
             </div>
           </div>
 
+          {/* Mode Selector Buttons */}
           <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
             <button type="button" onClick={() => setForensicMode('heatmap')} className={`forensic-tab-btn ${forensicMode === 'heatmap' ? 'active' : ''}`}>
               <Flame size={14} /> Thermal Forensic Heatmap
@@ -568,14 +569,161 @@ export default function ReportCard({ data, onReset }) {
             </button>
           </div>
 
-          <div style={{ background: '#000', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden', padding: '0.75rem', textAlign: 'center' }}>
+          {/* Image Display Window */}
+          <div style={{ background: '#000', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden', padding: '0.75rem', textAlign: 'center', marginBottom: '1.25rem' }}>
             {forensicMode === 'heatmap' && <img src={forensics.heatmap_image} alt="Thermal Heatmap" style={{ maxHeight: '380px', maxWidth: '100%', objectFit: 'contain', margin: '0 auto', borderRadius: '6px' }} />}
             {forensicMode === 'ela' && <img src={forensics.ela_image} alt="ELA Layer" style={{ maxHeight: '380px', maxWidth: '100%', objectFit: 'contain', margin: '0 auto', borderRadius: '6px' }} />}
             {forensicMode === 'original' && <img src={forensics.original_image} alt="Original Image" style={{ maxHeight: '380px', maxWidth: '100%', objectFit: 'contain', margin: '0 auto', borderRadius: '6px' }} />}
             {forensicMode === 'split' && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
-                <img src={forensics.original_image} alt="Original" style={{ width: '100%', maxHeight: '280px', objectFit: 'contain', borderRadius: '6px' }} />
-                <img src={forensics.heatmap_image} alt="Heatmap" style={{ width: '100%', maxHeight: '280px', objectFit: 'contain', borderRadius: '6px' }} />
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 700, marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Original Input</div>
+                  <img src={forensics.original_image} alt="Original" style={{ width: '100%', maxHeight: '280px', objectFit: 'contain', borderRadius: '6px' }} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 700, marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Thermal Heatmap</div>
+                  <img src={forensics.heatmap_image} alt="Heatmap" style={{ width: '100%', maxHeight: '280px', objectFit: 'contain', borderRadius: '6px' }} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* COLOR INDICATION & INTERPRETATION GUIDE */}
+          <div className="forensic-color-legend-card">
+            <div className="legend-header-row">
+              <div className="legend-title-wrapper">
+                <Info size={16} className="title-icon-cyan" />
+                <span className="legend-main-title">
+                  {forensicMode === 'ela'
+                    ? 'ELA LAYER COLOR INDICATIONS & ERROR LEVELS'
+                    : forensicMode === 'original'
+                    ? 'ORIGINAL BASELINE INSPECTION'
+                    : 'THERMAL FORENSIC COLOR INDICATIONS & RISK SPECTRUM'}
+                </span>
+              </div>
+              <span className="legend-status-badge">
+                {forensics.tampering_level || 'Analysis Complete'}
+              </span>
+            </div>
+
+            {/* SPECTRUM BAR */}
+            {forensicMode !== 'original' && (
+              <div className="forensic-spectrum-container">
+                <div className="spectrum-labels-top">
+                  <span>{forensicMode === 'ela' ? 'Low Error Level (Stable)' : 'Untouched / Baseline'}</span>
+                  <span>{forensicMode === 'ela' ? 'Normal Texture Contrast' : 'Moderate Compression'}</span>
+                  <span>{forensicMode === 'ela' ? 'High Error / Spliced (Tampered)' : 'High Tampering Risk (Edited)'}</span>
+                </div>
+                <div
+                  className="forensic-spectrum-gradient-bar"
+                  style={{
+                    background: forensicMode === 'ela'
+                      ? 'linear-gradient(90deg, #050505 0%, #475569 35%, #94a3b8 70%, #ffffff 100%)'
+                      : 'linear-gradient(90deg, #021a38 0%, #06b6d4 25%, #10b981 50%, #f59e0b 75%, #ef4444 100%)'
+                  }}
+                />
+              </div>
+            )}
+
+            {/* COLOR GRID CARDS - THERMAL & SPLIT MODE */}
+            {(forensicMode === 'heatmap' || forensicMode === 'split') && (
+              <div className="forensic-color-grid">
+                <div className="color-indicator-box border-red">
+                  <div className="color-box-head">
+                    <span className="color-swatch bg-red-bright" />
+                    <span className="color-name color-red">Red / Orange</span>
+                    <span className="color-tag tag-red">High Risk</span>
+                  </div>
+                  <p className="color-desc">
+                    <strong>Altered / Spliced Elements:</strong> Modified text, fake numbers, pasted logos, or Photoshop/Canva layers with high compression discrepancy.
+                  </p>
+                </div>
+
+                <div className="color-indicator-box border-amber">
+                  <div className="color-box-head">
+                    <span className="color-swatch bg-amber" />
+                    <span className="color-name color-amber">Yellow / Amber</span>
+                    <span className="color-tag tag-amber">Moderate Anomaly</span>
+                  </div>
+                  <p className="color-desc">
+                    <strong>Re-compression Artifacts:</strong> Multi-app forwarding (WhatsApp/X), slight boundary smoothing, or secondary digital overlays.
+                  </p>
+                </div>
+
+                <div className="color-indicator-box border-emerald">
+                  <div className="color-box-head">
+                    <span className="color-swatch bg-emerald" />
+                    <span className="color-name color-emerald">Green / Cyan</span>
+                    <span className="color-tag tag-emerald">Natural Variance</span>
+                  </div>
+                  <p className="color-desc">
+                    <strong>Natural Edge Gradients:</strong> Normal high-frequency camera transitions, soft shadows, and standard JPEG edge compression.
+                  </p>
+                </div>
+
+                <div className="color-indicator-box border-blue">
+                  <div className="color-box-head">
+                    <span className="color-swatch bg-navy" />
+                    <span className="color-name color-blue">Deep Blue / Navy</span>
+                    <span className="color-tag tag-blue">Baseline Safe</span>
+                  </div>
+                  <p className="color-desc">
+                    <strong>Uniform Original Area:</strong> Consistent untouched background; identical compression cycle matching the original camera capture.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* COLOR GRID CARDS - ELA GRAYSCALE MODE */}
+            {forensicMode === 'ela' && (
+              <div className="forensic-color-grid">
+                <div className="color-indicator-box border-white">
+                  <div className="color-box-head">
+                    <span className="color-swatch bg-white" />
+                    <span className="color-name color-white">Bright White Highlights</span>
+                    <span className="color-tag tag-red">High Tamper Risk</span>
+                  </div>
+                  <p className="color-desc">
+                    <strong>Higher Error Level:</strong> Bright glowing patches indicate pixels that have not undergone the same generational JPEG compression cycles (e.g. freshly inserted text or edited stamps).
+                  </p>
+                </div>
+
+                <div className="color-indicator-box border-gray">
+                  <div className="color-box-head">
+                    <span className="color-swatch bg-gray-medium" />
+                    <span className="color-name color-gray">Mid-Tone Gray Edges</span>
+                    <span className="color-tag tag-amber">Standard Detail</span>
+                  </div>
+                  <p className="color-desc">
+                    <strong>High-Frequency Contrast:</strong> Regular text outlines, sharp object contours, and fine textures naturally present in the camera capture.
+                  </p>
+                </div>
+
+                <div className="color-indicator-box border-dark">
+                  <div className="color-box-head">
+                    <span className="color-swatch bg-black-deep" />
+                    <span className="color-name color-dark">Black / Deep Dark</span>
+                    <span className="color-tag tag-emerald">Consistent / Untouched</span>
+                  </div>
+                  <p className="color-desc">
+                    <strong>Low Error Level:</strong> Consistent, unchanged background areas that have reached error saturation under uniform compression.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* ORIGINAL IMAGE NOTE */}
+            {forensicMode === 'original' && (
+              <div style={{ padding: '0.85rem 1rem', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', color: '#94a3b8', fontSize: '0.82rem', lineHeight: 1.5 }}>
+                <strong style={{ color: '#38bdf8' }}>Baseline Reference:</strong> You are viewing the original uploaded document / screenshot. Switch to <em>Thermal Forensic Heatmap</em> or <em>ELA Layer</em> to reveal hidden compression discrepancies and tampered regions.
+              </div>
+            )}
+
+            {/* FORENSIC SUMMARY BANNER */}
+            {forensics.summary && (
+              <div className="forensic-summary-banner">
+                <div className="summary-banner-title">Forensic Analysis Findings:</div>
+                <div className="summary-banner-text">{forensics.summary}</div>
               </div>
             )}
           </div>

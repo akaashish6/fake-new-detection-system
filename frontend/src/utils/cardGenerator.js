@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Utility to generate a high-resolution 1080x1080 WhatsApp Fact-Check Card image using HTML5 Canvas.
  */
 export function downloadFactCheckCard(data) {
@@ -68,7 +68,7 @@ export function downloadFactCheckCard(data) {
   // 2. Top Header Brand
   ctx.fillStyle = '#00f2fe';
   ctx.font = 'bold 24px sans-serif';
-  ctx.fillText('🛡️ TRUTHLENS AI', 55, 75);
+  ctx.fillText('🛡️ EERAFACT AI', 55, 75);
 
   ctx.fillStyle = '#94a3b8';
   ctx.font = '16px monospace';
@@ -157,12 +157,12 @@ export function downloadFactCheckCard(data) {
 
   ctx.fillStyle = '#94a3b8';
   ctx.font = '16px sans-serif';
-  ctx.fillText('Debunk viral phishing, fake government notices & forwarded scams with TruthLens AI.', 85, footerY + 82);
+  ctx.fillText('Debunk viral phishing, fake government notices & forwarded scams with EeraFact AI.', 85, footerY + 82);
 
   // Instant trigger download
   const dataUrl = canvas.toDataURL('image/png', 1.0);
   const link = document.createElement('a');
-  link.download = `TruthLens_FactCheck_${verdict}_${Date.now()}.png`;
+  link.download = `EeraFact_FactCheck_${verdict}_${Date.now()}.png`;
   link.href = dataUrl;
   document.body.appendChild(link);
   link.click();
