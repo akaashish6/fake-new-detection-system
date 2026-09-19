@@ -1,5 +1,6 @@
 /**
  * Utility to generate a high-resolution 1080x1080 WhatsApp Fact-Check Card image using HTML5 Canvas.
+ * Styled in EeraFact's signature warm editorial palette.
  */
 export function downloadFactCheckCard(data) {
   const canvas = document.createElement('canvas');
@@ -21,155 +22,136 @@ export function downloadFactCheckCard(data) {
   const isReal = verdict === 'Real';
   const isMisleading = verdict === 'Misleading';
 
-  const themeColor = isFake ? '#ef4444' : isReal ? '#10b981' : isMisleading ? '#f59e0b' : '#8b5cf6';
-  const themeBgColor = isFake ? 'rgba(239, 68, 68, 0.18)' : isReal ? 'rgba(16, 185, 129, 0.18)' : 'rgba(245, 158, 11, 0.18)';
+  // Warm, distinctive palette
+  const verdictColor = isFake ? '#C95C54' : isReal ? '#2F5D50' : isMisleading ? '#D99A3D' : '#6B7A6F';
+  const verdictBg = isFake ? '#FBF0EF' : isReal ? '#EEF5F1' : isMisleading ? '#FDF6E9' : '#F1F4F1';
+  const verdictBorder = isFake ? '#E8ADA9' : isReal ? '#98BCB0' : isMisleading ? '#ECC68F' : '#B8C7BC';
 
-  // 1. Background gradient
-  const bgGrad = ctx.createLinearGradient(0, 0, size, size);
-  bgGrad.addColorStop(0, '#0a0f1d');
-  bgGrad.addColorStop(0.5, '#060913');
-  bgGrad.addColorStop(1, '#03050a');
-  ctx.fillStyle = bgGrad;
+  // 1. Warm Ivory Canvas Background
+  ctx.fillStyle = '#F4F1EA';
   ctx.fillRect(0, 0, size, size);
 
-  // Background glow circle
-  const glowGrad = ctx.createRadialGradient(size / 2, 280, 50, size / 2, 280, 450);
-  glowGrad.addColorStop(0, themeColor === '#ef4444' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(16, 185, 129, 0.25)');
-  glowGrad.addColorStop(1, 'transparent');
-  ctx.fillStyle = glowGrad;
-  ctx.fillRect(0, 0, size, size);
+  // Soft Clay Card Container (Raised)
+  drawClayCard(ctx, 40, 40, size - 80, size - 80, 28, '#FFFDF8', '#E5DFC8');
 
-  // Outer border frame
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(24, 24, size - 48, size - 48);
-
-  // Corner tech brackets
-  ctx.strokeStyle = themeColor;
-  ctx.lineWidth = 6;
-  const bSize = 35;
-  // Top Left
+  // 2. Header Brand & Metadata
+  ctx.fillStyle = '#2F5D50';
   ctx.beginPath();
-  ctx.moveTo(24, 24 + bSize); ctx.lineTo(24, 24); ctx.lineTo(24 + bSize, 24);
-  ctx.stroke();
-  // Top Right
+  ctx.arc(88, 92, 18, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#FFFDF8';
   ctx.beginPath();
-  ctx.moveTo(size - 24 - bSize, 24); ctx.lineTo(size - 24, 24); ctx.lineTo(size - 24, 24 + bSize);
-  ctx.stroke();
-  // Bottom Left
-  ctx.beginPath();
-  ctx.moveTo(24, size - 24 - bSize); ctx.lineTo(24, size - 24); ctx.lineTo(24 + bSize, size - 24);
-  ctx.stroke();
-  // Bottom Right
-  ctx.beginPath();
-  ctx.moveTo(size - 24 - bSize, size - 24); ctx.lineTo(size - 24, size - 24); ctx.lineTo(size - 24, size - 24 - bSize);
-  ctx.stroke();
+  ctx.arc(88, 92, 9, 0, Math.PI * 2);
+  ctx.fill();
 
-  // 2. Top Header Brand
-  ctx.fillStyle = '#00f2fe';
-  ctx.font = 'bold 24px sans-serif';
-  ctx.fillText('🛡️ EERAFACT AI', 55, 75);
-
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '16px monospace';
-  const dateStr = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-  ctx.fillText(`FACT-CHECK BULLETIN • ${dateStr.toUpperCase()}`, 55, 105);
-
-  // Badge: Language
-  drawPill(ctx, size - 230, 65, 175, 36, `🌐 Lang: ${language_detected}`, 'rgba(255, 255, 255, 0.08)', '#cbd5e1');
-
-  // Divider Line
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(55, 130);
-  ctx.lineTo(size - 55, 130);
-  ctx.stroke();
-
-  // 3. Huge Verdict Banner Box
-  const verdictText = isFake
-    ? '🚨 FAKE NEWS / RUMOR BUSTED'
-    : isReal
-    ? '✅ VERIFIED TRUE & AUTHENTIC'
-    : isMisleading
-    ? '⚠️ MISLEADING / OUT OF CONTEXT'
-    : '❓ UNVERIFIABLE CLAIM';
-
-  drawRoundedRect(ctx, 55, 155, size - 110, 95, 16, themeBgColor, themeColor, 3);
-
-  ctx.fillStyle = themeColor;
-  ctx.font = 'bold 36px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(verdictText, size / 2, 215);
-
-  // Subtitle / Score below verdict
+  ctx.fillStyle = '#242824';
+  ctx.font = 'bold 30px "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = 'bold 19px sans-serif';
-  ctx.fillText(`🎯 AI Reliability Score: ${confidence_score}%`, 65, 290);
+  ctx.fillText('EeraFact', 120, 102);
 
-  ctx.fillStyle = '#38bdf8';
-  ctx.font = '16px monospace';
-  ctx.fillText('STATUS: CROSS-VERIFIED & FACT-CHECKED', size - 440, 290);
+  ctx.fillStyle = '#68706A';
+  ctx.font = '500 16px "Inter", sans-serif';
+  ctx.fillText('THINK. VERIFY. TRUST.', 270, 102);
 
-  // 4. Claim / Rumor Box
-  const claimBoxY = 320;
-  const claimBoxH = 190;
-  drawRoundedRect(ctx, 55, claimBoxY, size - 110, claimBoxH, 12, 'rgba(239, 68, 68, 0.09)', 'rgba(239, 68, 68, 0.35)', 1.5);
+  // Language Pill
+  drawPill(ctx, size - 260, 75, 175, 36, `🌐 ${language_detected}`, '#F0ECE1', '#242824');
 
-  ctx.fillStyle = '#f87171';
-  ctx.font = 'bold 18px sans-serif';
-  ctx.fillText('❌ WHAT THE VIRAL RUMOR CLAIMS:', 80, claimBoxY + 38);
+  // Divider
+  ctx.strokeStyle = '#EAE4D3';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(80, 140);
+  ctx.lineTo(size - 80, 140);
+  ctx.stroke();
 
-  ctx.fillStyle = '#f1f5f9';
-  ctx.font = '19px sans-serif';
-  const cleanInput = input_content || 'Viral claim analyzed in bulletin.';
-  wrapText(ctx, `"${cleanInput}"`, 80, claimBoxY + 75, size - 160, 28, 4);
+  // 3. Verdict Banner Card (Claymorphic)
+  const verdictText = isFake
+    ? '🚨 FAKE — MISINFORMATION DETECTED'
+    : isReal
+    ? '✅ VERIFIED REAL & AUTHENTIC'
+    : isMisleading
+    ? '⚠️ MISLEADING / DISTORTED CONTEXT'
+    : '🔍 UNVERIFIABLE CLAIM';
 
-  // 5. Verified Reality / Truth Box
+  drawClayCard(ctx, 80, 165, size - 160, 100, 20, verdictBg, verdictBorder);
+
+  ctx.fillStyle = verdictColor;
+  ctx.font = 'bold 34px "Plus Jakarta Sans", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(verdictText, size / 2, 228);
+
+  // Score Bar & Reliability badge
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#242824';
+  ctx.font = '600 20px "Inter", sans-serif';
+  ctx.fillText(`Credibility Index: ${confidence_score}%`, 90, 305);
+
+  ctx.fillStyle = '#68706A';
+  ctx.font = '500 15px "Inter", sans-serif';
+  const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  ctx.textAlign = 'right';
+  ctx.fillText(`Cross-Checked on ${dateStr}`, size - 90, 305);
+
+  // 4. Viral Claim Under Review Box
+  const claimBoxY = 330;
+  const claimBoxH = 180;
+  drawClayCard(ctx, 80, claimBoxY, size - 160, claimBoxH, 16, '#F8F6F0', '#E5DFC8');
+
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#C95C54';
+  ctx.font = 'bold 16px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('VIRAL CLAIM UNDER REVIEW:', 105, claimBoxY + 36);
+
+  ctx.fillStyle = '#242824';
+  ctx.font = 'italic 18px "Inter", sans-serif';
+  const cleanInput = input_content || 'Viral claim analyzed by EeraFact.';
+  wrapText(ctx, `"${cleanInput}"`, 105, claimBoxY + 70, size - 210, 26, 4);
+
+  // 5. Ground Truth & Reasoning Box
   const factBoxY = 535;
   const factBoxH = 320;
-  drawRoundedRect(ctx, 55, factBoxY, size - 110, factBoxH, 12, 'rgba(16, 185, 129, 0.09)', 'rgba(16, 185, 129, 0.35)', 1.5);
+  drawClayCard(ctx, 80, factBoxY, size - 160, factBoxH, 18, '#F3F6F3', '#CCDCD3');
 
-  ctx.fillStyle = '#34d399';
-  ctx.font = 'bold 18px sans-serif';
-  ctx.fillText('✅ THE FACT-CHECK & GROUND TRUTH (SACHAI):', 80, factBoxY + 40);
+  ctx.fillStyle = '#2F5D50';
+  ctx.font = 'bold 17px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('VERIFICATION FINDINGS & EVIDENCE (GROUND TRUTH):', 105, factBoxY + 38);
 
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = '20px sans-serif';
-  wrapText(ctx, reasoning, 80, factBoxY + 80, size - 160, 30, 6);
+  ctx.fillStyle = '#242824';
+  ctx.font = '19px "Inter", sans-serif';
+  wrapText(ctx, reasoning, 105, factBoxY + 78, size - 210, 28, 6);
 
-  // Sources text if available
+  // Verified Sources Note
   if (sources && sources.length > 0) {
-    ctx.fillStyle = '#00f2fe';
-    ctx.font = '15px monospace';
+    ctx.fillStyle = '#2F5D50';
+    ctx.font = '600 14px "Inter", sans-serif';
     const srcNames = sources.map((s) => (typeof s === 'string' ? s : s.title || s.url)).slice(0, 2).join(' • ');
-    ctx.fillText(`🔗 Proof Sources: ${srcNames}`, 80, factBoxY + factBoxH - 25);
+    ctx.fillText(`📚 Sources Consulted: ${srcNames}`, 105, factBoxY + factBoxH - 24);
   }
 
-  // 6. Bottom WhatsApp Defense Footer
+  // 6. WhatsApp Anti-Misinformation Defense Banner
   const footerY = 880;
-  drawRoundedRect(ctx, 55, footerY, size - 110, 130, 14, 'rgba(0, 0, 0, 0.5)', 'rgba(0, 242, 254, 0.3)', 1.5);
+  drawClayCard(ctx, 80, footerY, size - 160, 115, 18, '#242824', '#3E463F');
 
-  ctx.fillStyle = '#22c55e';
-  ctx.font = 'bold 22px sans-serif';
-  ctx.fillText('💬 Share in WhatsApp Groups to Stop Fake Rumors', 85, footerY + 45);
+  ctx.fillStyle = '#FFFDF8';
+  ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('Share Verified Truth. Stop Viral Rumors.', 110, footerY + 45);
 
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '16px sans-serif';
-  ctx.fillText('Debunk viral phishing, fake government notices & forwarded scams with EeraFact AI.', 85, footerY + 82);
+  ctx.fillStyle = '#A8B9A5';
+  ctx.font = '15px "Inter", sans-serif';
+  ctx.fillText('Verify text, URLs, images and audio notes instantly at EeraFact.', 110, footerY + 80);
 
-  // Instant trigger download
+  // Trigger Download
   const dataUrl = canvas.toDataURL('image/png', 1.0);
   const link = document.createElement('a');
-  link.download = `EeraFact_FactCheck_${verdict}_${Date.now()}.png`;
+  link.download = `EeraFact_Report_${verdict}_${Date.now()}.png`;
   link.href = dataUrl;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
 }
 
-function drawRoundedRect(ctx, x, y, width, height, radius, fillStyle, strokeStyle, lineWidth) {
+function drawClayCard(ctx, x, y, width, height, radius, fillStyle, strokeStyle) {
   ctx.save();
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
@@ -182,22 +164,22 @@ function drawRoundedRect(ctx, x, y, width, height, radius, fillStyle, strokeStyl
   ctx.lineTo(x, y + radius);
   ctx.quadraticCurveTo(x, y, x + radius, y);
   ctx.closePath();
-  if (fillStyle) {
-    ctx.fillStyle = fillStyle;
-    ctx.fill();
-  }
+
+  ctx.fillStyle = fillStyle;
+  ctx.fill();
+
   if (strokeStyle) {
     ctx.strokeStyle = strokeStyle;
-    ctx.lineWidth = lineWidth || 1;
+    ctx.lineWidth = 1.5;
     ctx.stroke();
   }
   ctx.restore();
 }
 
 function drawPill(ctx, x, y, width, height, text, bg, color) {
-  drawRoundedRect(ctx, x, y, width, height, height / 2, bg, 'rgba(255,255,255,0.1)', 1);
+  drawClayCard(ctx, x, y, width, height, height / 2, bg, '#E0DAC6');
   ctx.fillStyle = color;
-  ctx.font = 'bold 14px monospace';
+  ctx.font = '600 14px "Inter", sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(text, x + width / 2, y + height / 2 + 5);
   ctx.textAlign = 'left';

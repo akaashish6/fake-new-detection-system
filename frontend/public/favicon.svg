@@ -1,39 +1,121 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="100%" height="100%" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%" fill="none">
   <defs>
-    <linearGradient id="efFavGrad" x1="20" y1="16" x2="140" y2="148" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0284c7" />
-      <stop offset="45%" stop-color="#3b82f6" />
-      <stop offset="75%" stop-color="#6366f1" />
-      <stop offset="100%" stop-color="#8b5cf6" />
+    <!-- Background Shield Gradient -->
+    <linearGradient id="efShieldGrad" x1="16" y1="12" x2="112" y2="116" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="35%" stop-color="#4facfe" />
+      <stop offset="70%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#a855f7" />
     </linearGradient>
-    <linearGradient id="efFavCheck" x1="70" y1="80" x2="118" y2="50" gradientUnits="userSpaceOnUse">
+
+    <!-- Lens Rim Gradient -->
+    <linearGradient id="efLensGrad" x1="28" y1="24" x2="88" y2="84" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#818cf8" />
+    </linearGradient>
+
+    <!-- Handle Gradient -->
+    <linearGradient id="efHandleGrad" x1="78" y1="74" x2="108" y2="104" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="50%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+
+    <!-- Verification Check Gradient -->
+    <linearGradient id="efCheckGrad" x1="42" y1="52" x2="74" y2="38" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#10b981" />
-      <stop offset="50%" stop-color="#38bdf8" />
-      <stop offset="100%" stop-color="#60a5fa" />
+      <stop offset="50%" stop-color="#06d6a0" />
+      <stop offset="100%" stop-color="#38bdf8" />
     </linearGradient>
+
+    <!-- Inner Glass Radial Fill -->
+    <radialGradient id="efGlassInner" cx="56" cy="52" r="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.9" />
+      <stop offset="80%" stop-color="#090d1a" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#030712" stop-opacity="1" />
+    </radialGradient>
+
+    <!-- Subtle Glow Filter -->
+    <filter id="efGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
   </defs>
 
-  <!-- Background Shield Body -->
+  <!-- Outer Security Badge Container -->
   <path
-    d="M80 16 L132 39 V78 C132 111 80 142 80 142 C80 142 28 111 28 78 V39 L80 16 Z"
-    fill="#080e21"
-    stroke="url(#efFavGrad)"
-    stroke-width="5"
+    d="M64 10 L112 28 V64 C112 92 64 118 64 118 C64 118 16 92 16 64 V28 L64 10 Z"
+    fill="#080e1e"
+    stroke="url(#efShieldGrad)"
+    stroke-width="4.5"
     stroke-linejoin="round"
   />
 
-  <!-- EF Monogram Structure -->
-  <rect x="50" y="44" width="12" height="66" rx="6" fill="#ffffff" />
-  <path d="M50 50 C50 46.5 52.5 44 56 44 L102 44 C105.5 44 108 46.5 108 50 C108 53.5 105.5 56 102 56 L56 56 C52.5 56 50 53.5 50 50 Z" fill="#ffffff" />
-  <path d="M50 74 C50 70.5 52.5 68 56 68 L90 68 C93.5 68 96 70.5 96 74 C96 77.5 93.5 80 90 80 L56 80 C52.5 80 50 77.5 50 74 Z" fill="#ffffff" />
-  <path d="M50 104 C50 100.5 52.5 98 56 98 L82 98 C85.5 98 88 100.5 88 104 C88 107.5 85.5 110 82 110 L56 110 C52.5 110 50 107.5 50 104 Z" fill="#38bdf8" />
-
-  <!-- Verification Fact Checkmark -->
+  <!-- Subtle Cyber Shield Inner Grid -->
   <path
-    d="M74 86 L88 100 L118 64"
-    stroke="url(#efFavCheck)"
-    stroke-width="8"
+    d="M64 19 L103 34.5 V63 C103 86 64 107.5 64 107.5 C64 107.5 25 86 25 63 V34.5 L64 19 Z"
+    stroke="#38bdf8"
+    stroke-width="1.2"
+    stroke-dasharray="3 3"
+    opacity="0.3"
+    fill="none"
+  />
+
+  <!-- Magnifying Scanner Lens Body (Dark Glass Center) -->
+  <circle cx="56" cy="52" r="25" fill="url(#efGlassInner)" />
+
+  <!-- Magnifying Glass Rim -->
+  <circle
+    cx="56"
+    cy="52"
+    r="25"
+    stroke="url(#efLensGrad)"
+    stroke-width="5.5"
+    fill="none"
+  />
+
+  <!-- Scanner Target Ring Arc -->
+  <path
+    d="M 56 33 A 19 19 0 0 1 75 52"
+    stroke="#38bdf8"
+    stroke-width="2"
+    stroke-linecap="round"
+    fill="none"
+    opacity="0.8"
+  />
+
+  <!-- Heavy Duty Sleek Handle -->
+  <path
+    d="M74 70 L96 92"
+    stroke="url(#efHandleGrad)"
+    stroke-width="8.5"
+    stroke-linecap="round"
+  />
+  <path
+    d="M75 71 L94 90"
+    stroke="#38bdf8"
+    stroke-width="3"
+    stroke-linecap="round"
+    opacity="0.7"
+  />
+
+  <!-- Dynamic Verification Fact Checkmark inside Lens -->
+  <path
+    d="M44 52 L53 61 L70 42"
+    stroke="url(#efCheckGrad)"
+    stroke-width="6"
     stroke-linecap="round"
     stroke-linejoin="round"
+  />
+
+  <!-- AI Intelligence Star Sparkle -->
+  <path
+    d="M87 23 Q87 30 94 30 Q87 30 87 37 Q87 30 80 30 Q87 30 87 23 Z"
+    fill="#38bdf8"
+    filter="url(#efGlow)"
   />
 </svg>

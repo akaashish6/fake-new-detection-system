@@ -1,11 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FileText, Link, Image as ImageIcon, Mic, Upload, X, Sparkles, Square, Play, Volume2, Radio, CheckCircle2 } from 'lucide-react';
+import {
+  FileText,
+  Link as LinkIcon,
+  Image as ImageIcon,
+  Mic,
+  Upload,
+  X,
+  Sparkles,
+  Square,
+  Radio,
+  CheckCircle2,
+  Volume2,
+  ArrowRight,
+  Info
+} from 'lucide-react';
 
-export default function InputForm({ onSubmit, isLoading }) {
-  const [inputType, setInputType] = useState('text');
+export default function InputForm({ onSubmit, isLoading, defaultType = 'text' }) {
+  const [inputType, setInputType] = useState(defaultType);
   const [textInput, setTextInput] = useState('');
   const [urlInput, setUrlInput] = useState('');
-  
+
   // Image State
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -25,8 +39,13 @@ export default function InputForm({ onSubmit, isLoading }) {
   const streamRef = useRef(null);
 
   useEffect(() => {
+    if (defaultType) {
+      setInputType(defaultType);
+    }
+  }, [defaultType]);
+
+  useEffect(() => {
     return () => {
-      // Cleanup audio stream and timers on unmount
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
@@ -110,8 +129,7 @@ export default function InputForm({ onSubmit, isLoading }) {
         const recordedFile = new File([audioBlob], `voice_note_${Date.now()}.webm`, { type: mimeType });
         setAudioFile(recordedFile);
         setAudioPreviewUrl(URL.createObjectURL(recordedFile));
-        
-        // Stop stream tracks
+
         if (streamRef.current) {
           streamRef.current.getTracks().forEach((track) => track.stop());
         }
@@ -170,369 +188,414 @@ export default function InputForm({ onSubmit, isLoading }) {
     onSubmit(formData);
   };
 
-  const handleSampleClick = (sampleText) => {
+  const handleSampleClick = (sample) => {
     setInputType('text');
-    setTextInput(sampleText);
+    setTextInput(sample);
   };
 
+  const sampleClaims = [
+    {
+      title: '5G Free Recharge',
+      tag: 'Scam Alert',
+      text: 'PM Modi announces 3 months free 5G recharge scheme for all Indian users via forward link.'
+    },
+    {
+      title: 'GPS Chip in Currency',
+      tag: 'Viral Rumor',
+      text: '2000 rupaye ke note me radioactive GPS chip hai jo zameen ke neeche bhi track karegi.'
+    },
+    {
+      title: 'Election WhatsApp Voting',
+      tag: 'Misleading',
+      text: 'Election Commission announced that voters can now cast votes and update voter ID cards via official WhatsApp bot.'
+    }
+  ];
+
   return (
-    <div className="glass-panel glass-panel-glow" style={{ padding: '2.25rem' }}>
-      {/* 4 Input Tabs */}
-      <div className="input-tabs">
+    <div className="clay-verify-container">
+      {/* 4 Large Claymorphic Input Selector Cards */}
+      <div className="clay-modality-selector-grid">
         <button
           type="button"
-          className={`input-tab ${inputType === 'text' ? 'active' : ''}`}
+          className={`clay-selector-card ${inputType === 'text' ? 'active' : ''}`}
           onClick={() => setInputType('text')}
         >
-          <FileText size={18} />
-          Text / Claim
+          <div className="selector-icon-box">
+            <FileText size={22} />
+          </div>
+          <div className="selector-text-box">
+            <span className="selector-title">TEXT CLAIM</span>
+            <span className="selector-desc">Paste claim, message or social media post</span>
+          </div>
+          {inputType === 'text' && <span className="selector-active-indicator" />}
         </button>
+
         <button
           type="button"
-          className={`input-tab ${inputType === 'url' ? 'active' : ''}`}
+          className={`clay-selector-card ${inputType === 'url' ? 'active' : ''}`}
           onClick={() => setInputType('url')}
         >
-          <Link size={18} />
-          News URL
+          <div className="selector-icon-box">
+            <LinkIcon size={22} />
+          </div>
+          <div className="selector-text-box">
+            <span className="selector-title">NEWS URL</span>
+            <span className="selector-desc">Check a news article or webpage</span>
+          </div>
+          {inputType === 'url' && <span className="selector-active-indicator" />}
         </button>
+
         <button
           type="button"
-          className={`input-tab ${inputType === 'image' ? 'active' : ''}`}
+          className={`clay-selector-card ${inputType === 'image' ? 'active' : ''}`}
           onClick={() => setInputType('image')}
         >
-          <ImageIcon size={18} />
-          Screenshot
+          <div className="selector-icon-box">
+            <ImageIcon size={22} />
+          </div>
+          <div className="selector-text-box">
+            <span className="selector-title">SCREENSHOT</span>
+            <span className="selector-desc">Upload a screenshot or image for ELA forensics</span>
+          </div>
+          {inputType === 'image' && <span className="selector-active-indicator" />}
         </button>
+
         <button
           type="button"
-          className={`input-tab ${inputType === 'audio' ? 'active' : ''}`}
+          className={`clay-selector-card ${inputType === 'audio' ? 'active' : ''}`}
           onClick={() => setInputType('audio')}
         >
-          <Mic size={18} />
-          Audio / Voice Note
+          <div className="selector-icon-box">
+            <Mic size={22} />
+          </div>
+          <div className="selector-text-box">
+            <span className="selector-title">VOICE NOTE</span>
+            <span className="selector-desc">Upload or record voice notes & audio clips</span>
+          </div>
+          {inputType === 'audio' && <span className="selector-active-indicator" />}
         </button>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        {/* TAB 1: TEXT CLAIM */}
-        {inputType === 'text' && (
-          <div className="form-group">
-            <label className="form-label">Paste your claim or forward message</label>
-            <div className="textarea-container">
-              <textarea
-                className="custom-textarea"
-                placeholder="Paste news claim, viral WhatsApp message, or tweet (supports English, Hindi & Hinglish)..."
-                value={textInput}
-                onChange={(e) => setTextInput(e.target.value)}
-                maxLength={5000}
-                required
-              />
-              <div className="textarea-footer">
-                <span className="char-count">{textInput.length} / 5000</span>
-                <span className="ai-ready-badge">
-                  <Sparkles size={14} /> AI Ready
+      {/* Main Claymorphic Form Box */}
+      <div className="clay-card clay-form-card">
+        <form onSubmit={handleSubmit}>
+          {/* TAB 1: TEXT CLAIM */}
+          {inputType === 'text' && (
+            <div className="clay-form-group">
+              <div className="form-group-header">
+                <label className="clay-label">
+                  Paste WhatsApp Forward, Social Post or Headline
+                </label>
+                <span className="clay-badge-subtle">
+                  Supports English, Hindi & Hinglish
                 </span>
               </div>
-            </div>
 
-            <div className="sample-pills-row">
-              <span className="sample-label">Try an example:</span>
-              <button
-                type="button"
-                onClick={() => handleSampleClick('PM Modi announces 3 months free 5G recharge scheme for all Indian users')}
-                className="sample-pill-ref"
-              >
-                ⚡ 5G Recharge Scam
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSampleClick('2000 rupaye ke note me GPS chip hai jo zameen ke neeche bhi track karegi')}
-                className="sample-pill-ref"
-              >
-                📍 Hinglish GPS Rumor
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSampleClick('Election Commission announced voter ID card updates via WhatsApp link')}
-                className="sample-pill-ref"
-              >
-                🗳️ Election Viral Claim
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: URL */}
-        {inputType === 'url' && (
-          <div className="form-group">
-            <label className="form-label">News Article URL</label>
-            <input
-              type="url"
-              className="custom-input"
-              placeholder="https://example-news-site.com/article/123"
-              value={urlInput}
-              onChange={(e) => setUrlInput(e.target.value)}
-              required
-            />
-          </div>
-        )}
-
-        {/* TAB 3: SCREENSHOT */}
-        {inputType === 'image' && (
-          <div className="form-group">
-            <label className="form-label">Upload Screenshot of Social Post or News Clippings</label>
-            {!selectedFile ? (
-              <div
-                className={`dropzone ${dragActive ? 'drag-active' : ''}`}
-                onDrop={handleDrop}
-                onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
-                onDragLeave={() => setDragActive(false)}
-                onClick={() => document.getElementById('file-upload-input').click()}
-              >
-                <div className="dropzone-icon">
-                  <Upload size={24} />
+              <div className="clay-textarea-wrapper">
+                <textarea
+                  className="clay-textarea"
+                  placeholder="Paste news claim, viral WhatsApp message, quote, or social post here..."
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  maxLength={5000}
+                  rows={5}
+                  required
+                />
+                <div className="clay-textarea-meta">
+                  <span className="char-counter">{textInput.length} / 5000 characters</span>
+                  <span className="nlp-ready-indicator">
+                    <Sparkles size={13} />
+                    Multilingual NLP Ready
+                  </span>
                 </div>
-                <div>
-                  <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                    Drag & Drop screenshot here, or browse
-                  </p>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                    Supports PNG, JPG, WEBP screenshots of posts, forwards, or headlines
-                  </p>
+              </div>
+
+              {/* Sample Claims Carousel / Quick Test Pills */}
+              <div className="clay-sample-bar">
+                <span className="sample-bar-label">Try a common claim:</span>
+                <div className="sample-pills-wrap">
+                  {sampleClaims.map((item, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className="clay-sample-pill"
+                      onClick={() => handleSampleClick(item.text)}
+                      title={`Load: ${item.text}`}
+                    >
+                      <span className="sample-pill-dot" />
+                      <span className="sample-pill-name">{item.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: NEWS URL */}
+          {inputType === 'url' && (
+            <div className="clay-form-group">
+              <div className="form-group-header">
+                <label className="clay-label">News Article or Webpage URL</label>
+                <span className="clay-badge-subtle">Real-Time Domain & Content Audit</span>
+              </div>
+
+              <div className="clay-input-wrapper">
+                <div className="input-icon-box">
+                  <LinkIcon size={18} />
                 </div>
                 <input
-                  id="file-upload-input"
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={(e) => e.target.files && handleFileChange(e.target.files[0])}
+                  type="url"
+                  className="clay-input"
+                  placeholder="https://example-news-site.com/investigation/1234"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  required
                 />
               </div>
-            ) : (
-              <div className="image-preview-container">
-                <img src={previewUrl} alt="Upload preview" className="image-preview" />
-                <button type="button" className="remove-image-btn" onClick={removeImage}>
-                  <X size={18} />
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
-        {/* TAB 4: AUDIO / VOICE NOTE */}
-        {inputType === 'audio' && (
-          <div className="form-group">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <label className="form-label">WhatsApp Voice Note & Audio Fact-Checking</label>
-              
-              {/* Audio Mode Switcher */}
-              <div style={{ display: 'flex', gap: '0.35rem', background: 'rgba(0,0,0,0.25)', padding: '3px', borderRadius: 'var(--radius-sm)' }}>
-                <button
-                  type="button"
-                  onClick={() => setAudioMode('upload')}
-                  style={{
-                    background: audioMode === 'upload' ? 'var(--accent-cyan)' : 'transparent',
-                    color: audioMode === 'upload' ? '#000' : 'var(--text-secondary)',
-                    border: 'none',
-                    padding: '0.3rem 0.75rem',
-                    borderRadius: '4px',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  📁 Upload Audio File
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAudioMode('record')}
-                  style={{
-                    background: audioMode === 'record' ? 'var(--accent-cyan)' : 'transparent',
-                    color: audioMode === 'record' ? '#000' : 'var(--text-secondary)',
-                    border: 'none',
-                    padding: '0.3rem 0.75rem',
-                    borderRadius: '4px',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  🎙️ Record with Mic
-                </button>
-              </div>
+              <p className="clay-hint-text">
+                <Info size={14} className="hint-icon" />
+                EeraFact will extract the core claims, verify domain legitimacy, and cross-reference stories against trusted sources.
+              </p>
             </div>
+          )}
 
-            {/* Mode A: Upload Audio File */}
-            {audioMode === 'upload' && (
-              <>
-                {!audioFile ? (
-                  <div
-                    className={`dropzone ${audioDragActive ? 'drag-active' : ''}`}
-                    onDrop={handleAudioDrop}
-                    onDragOver={(e) => { e.preventDefault(); setAudioDragActive(true); }}
-                    onDragLeave={() => setAudioDragActive(false)}
-                    onClick={() => document.getElementById('audio-file-input').click()}
-                  >
-                    <div className="dropzone-icon" style={{ background: 'rgba(14, 165, 233, 0.15)', color: 'var(--accent-cyan)' }}>
-                      <Volume2 size={24} />
-                    </div>
-                    <div>
-                      <p style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                        Drag & Drop WhatsApp Voice Note or Audio File
-                      </p>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                        Supports MP3, M4A, OGG, WAV, OPUS, AAC (Hindi, Hinglish & Regional speech)
-                      </p>
-                    </div>
-                    <input
-                      id="audio-file-input"
-                      type="file"
-                      accept="audio/*,.mp3,.wav,.ogg,.m4a,.opus,.aac,.webm"
-                      style={{ display: 'none' }}
-                      onChange={(e) => e.target.files && handleAudioFileChange(e.target.files[0])}
-                    />
-                  </div>
-                ) : (
-                  <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ width: 42, height: 42, background: 'rgba(16, 185, 129, 0.15)', color: 'var(--verdict-real)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <CheckCircle2 size={22} />
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
-                          {audioFile.name || 'Voice Note Attached'}
-                        </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          {(audioFile.size / 1024).toFixed(1)} KB • Ready for speech fact-checking
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      {audioPreviewUrl && (
-                        <audio controls src={audioPreviewUrl} style={{ height: '36px', maxWidth: '240px' }} />
-                      )}
-                      <button
-                        type="button"
-                        onClick={removeAudio}
-                        style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-sm)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.85rem' }}
-                      >
-                        <X size={15} /> Remove
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Mode B: Record Live with Microphone */}
-            {audioMode === 'record' && (
-              <div style={{ background: 'rgba(15, 23, 42, 0.8)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', padding: '2rem', textAlign: 'center' }}>
-                {!audioFile && !isRecording && (
-                  <div>
-                    <div style={{ width: 64, height: 64, margin: '0 auto 1rem', background: 'rgba(14, 165, 233, 0.15)', color: 'var(--accent-cyan)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Mic size={32} />
-                    </div>
-                    <p style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '1.05rem', marginBottom: '0.35rem' }}>
-                      Click below to start recording voice note
-                    </p>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-                      Speak the rumor or play WhatsApp audio near your microphone (Hindi, Hinglish or English)
-                    </p>
-                    <button
-                      type="button"
-                      onClick={startRecording}
-                      style={{
-                        background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-                        color: 'white',
-                        border: 'none',
-                        padding: '0.75rem 1.75rem',
-                        borderRadius: '50px',
-                        fontWeight: 600,
-                        fontSize: '0.95rem',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        cursor: 'pointer',
-                        boxShadow: '0 0 20px rgba(239, 68, 68, 0.4)'
-                      }}
-                    >
-                      <Radio size={18} />
-                      Start Voice Recording
-                    </button>
-                  </div>
-                )}
-
-                {isRecording && (
-                  <div>
-                    <div style={{ width: 72, height: 72, margin: '0 auto 1rem', background: 'rgba(239, 68, 68, 0.2)', border: '2px solid #ef4444', color: '#ef4444', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'pulse 1.5s infinite' }}>
-                      <Radio size={36} />
-                    </div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, fontFamily: 'monospace', color: '#ef4444', marginBottom: '0.5rem' }}>
-                      🔴 Recording: {formatTimer(recordTimer)}
-                    </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-                      Listening... Speak clearly into your microphone
-                    </p>
-                    <button
-                      type="button"
-                      onClick={stopRecording}
-                      style={{
-                        background: '#ef4444',
-                        color: 'white',
-                        border: 'none',
-                        padding: '0.75rem 1.75rem',
-                        borderRadius: '50px',
-                        fontWeight: 600,
-                        fontSize: '0.95rem',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        cursor: 'pointer',
-                        boxShadow: '0 0 20px rgba(239, 68, 68, 0.6)'
-                      }}
-                    >
-                      <Square size={16} />
-                      Stop & Save Recording
-                    </button>
-                  </div>
-                )}
-
-                {audioFile && !isRecording && (
-                  <div>
-                    <div style={{ width: 54, height: 54, margin: '0 auto 0.75rem', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--verdict-real)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <CheckCircle2 size={28} />
-                    </div>
-                    <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-                      Voice Note Recorded Successfully ({formatTimer(recordTimer)})
-                    </p>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                      Listen to your recording below, or click Verify Claim
-                    </p>
-
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                      <audio controls src={audioPreviewUrl} style={{ height: '38px' }} />
-                      <button
-                        type="button"
-                        onClick={removeAudio}
-                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.85rem' }}
-                      >
-                        Re-record Audio
-                      </button>
-                    </div>
-                  </div>
-                )}
+          {/* TAB 3: IMAGE / SCREENSHOT */}
+          {inputType === 'image' && (
+            <div className="clay-form-group">
+              <div className="form-group-header">
+                <label className="clay-label">Upload Screenshot of News Clipping or Social Post</label>
+                <span className="clay-badge-subtle">Digital Forensic ELA Heatmap</span>
               </div>
-            )}
-          </div>
-        )}
 
-        <button type="submit" className="submit-btn" disabled={isLoading || (inputType === 'audio' && !audioFile)}>
-          <Sparkles size={20} />
-          {isLoading ? 'Processing...' : 'Analyze with EeraFact AI'}
-        </button>
-      </form>
+              {!selectedFile ? (
+                <div
+                  className={`clay-dropzone ${dragActive ? 'drag-active' : ''}`}
+                  onDrop={handleDrop}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragActive(true);
+                  }}
+                  onDragLeave={() => setDragActive(false)}
+                  onClick={() => document.getElementById('clay-image-upload').click()}
+                >
+                  <div className="dropzone-clay-icon">
+                    <Upload size={28} />
+                  </div>
+                  <div className="dropzone-text">
+                    <p className="dropzone-primary-text">
+                      Drag & Drop screenshot here, or <span className="dropzone-link">browse files</span>
+                    </p>
+                    <p className="dropzone-sub-text">
+                      Supports PNG, JPG, WEBP screenshots of posts, newspaper clippings, or notices
+                    </p>
+                  </div>
+                  <input
+                    id="clay-image-upload"
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => e.target.files && handleFileChange(e.target.files[0])}
+                  />
+                </div>
+              ) : (
+                <div className="clay-image-preview-box">
+                  <div className="preview-img-wrap">
+                    <img src={previewUrl} alt="Uploaded preview" className="clay-preview-img" />
+                    <button
+                      type="button"
+                      className="clay-remove-btn"
+                      onClick={removeImage}
+                      title="Remove image"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                  <div className="preview-info-box">
+                    <div className="preview-file-name">{selectedFile.name}</div>
+                    <div className="preview-file-meta">
+                      {(selectedFile.size / 1024).toFixed(1)} KB • Ready for OCR & Forensic ELA Scan
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: AUDIO / VOICE NOTE */}
+          {inputType === 'audio' && (
+            <div className="clay-form-group">
+              <div className="form-group-header">
+                <label className="clay-label">WhatsApp Voice Note & Speech Verification</label>
+                <div className="clay-pill-switch">
+                  <button
+                    type="button"
+                    className={`clay-switch-btn ${audioMode === 'upload' ? 'active' : ''}`}
+                    onClick={() => setAudioMode('upload')}
+                  >
+                    Upload File
+                  </button>
+                  <button
+                    type="button"
+                    className={`clay-switch-btn ${audioMode === 'record' ? 'active' : ''}`}
+                    onClick={() => setAudioMode('record')}
+                  >
+                    Record Mic
+                  </button>
+                </div>
+              </div>
+
+              {/* Mode A: Upload Audio */}
+              {audioMode === 'upload' && (
+                <>
+                  {!audioFile ? (
+                    <div
+                      className={`clay-dropzone ${audioDragActive ? 'drag-active' : ''}`}
+                      onDrop={handleAudioDrop}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        setAudioDragActive(true);
+                      }}
+                      onDragLeave={() => setAudioDragActive(false)}
+                      onClick={() => document.getElementById('clay-audio-upload').click()}
+                    >
+                      <div className="dropzone-clay-icon audio-tint">
+                        <Volume2 size={28} />
+                      </div>
+                      <div className="dropzone-text">
+                        <p className="dropzone-primary-text">
+                          Drag & Drop audio note or <span className="dropzone-link">browse voice clip</span>
+                        </p>
+                        <p className="dropzone-sub-text">
+                          Supports MP3, M4A, OGG, WAV, OPUS, AAC (Hindi, Hinglish & English speech)
+                        </p>
+                      </div>
+                      <input
+                        id="clay-audio-upload"
+                        type="file"
+                        accept="audio/*,.mp3,.wav,.ogg,.m4a,.opus,.aac,.webm"
+                        style={{ display: 'none' }}
+                        onChange={(e) => e.target.files && handleAudioFileChange(e.target.files[0])}
+                      />
+                    </div>
+                  ) : (
+                    <div className="clay-audio-preview-box">
+                      <div className="audio-meta-left">
+                        <div className="audio-status-icon">
+                          <CheckCircle2 size={22} />
+                        </div>
+                        <div>
+                          <div className="audio-filename">{audioFile.name || 'Voice Note Attached'}</div>
+                          <div className="audio-filesize">
+                            {(audioFile.size / 1024).toFixed(1)} KB • Ready for Speech-to-Fact Audit
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="audio-controls-right">
+                        {audioPreviewUrl && (
+                          <audio controls src={audioPreviewUrl} className="clay-audio-player" />
+                        )}
+                        <button
+                          type="button"
+                          className="clay-btn clay-btn-danger clay-btn-sm"
+                          onClick={removeAudio}
+                        >
+                          <X size={15} />
+                          <span>Remove</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Mode B: Record Live Mic */}
+              {audioMode === 'record' && (
+                <div className="clay-recorder-card">
+                  {!audioFile && !isRecording && (
+                    <div className="recorder-idle-state">
+                      <div className="recorder-mic-avatar">
+                        <Mic size={32} />
+                      </div>
+                      <h4 className="recorder-prompt">Record Voice Note with Microphone</h4>
+                      <p className="recorder-instructions">
+                        Speak the rumor or play audio near your microphone (supports English, Hindi, and regional speech).
+                      </p>
+                      <button
+                        type="button"
+                        className="clay-btn clay-btn-danger clay-btn-md"
+                        onClick={startRecording}
+                      >
+                        <Radio size={16} />
+                        <span>Start Recording</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {isRecording && (
+                    <div className="recorder-live-state">
+                      <div className="recorder-live-indicator">
+                        <span className="recording-pulse-ring" />
+                        <Radio size={32} className="recording-icon" />
+                      </div>
+                      <div className="recording-live-timer">
+                        Recording: {formatTimer(recordTimer)}
+                      </div>
+                      <p className="recording-status-text">
+                        Listening to audio stream... Speak clearly into your microphone.
+                      </p>
+                      <button
+                        type="button"
+                        className="clay-btn clay-btn-danger clay-btn-md"
+                        onClick={stopRecording}
+                      >
+                        <Square size={16} />
+                        <span>Stop & Attach Recording</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {audioFile && !isRecording && (
+                    <div className="recorder-completed-state">
+                      <div className="recorder-check-avatar">
+                        <CheckCircle2 size={26} />
+                      </div>
+                      <h4 className="recorder-prompt">Voice Note Captured ({formatTimer(recordTimer)})</h4>
+                      <p className="recorder-instructions">
+                        Preview your recording below or re-record if needed before verification.
+                      </p>
+                      <div className="recorder-playback-row">
+                        <audio controls src={audioPreviewUrl} className="clay-audio-player" />
+                        <button
+                          type="button"
+                          className="clay-btn clay-btn-secondary clay-btn-sm"
+                          onClick={removeAudio}
+                        >
+                          Re-record
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Submit Action Button */}
+          <div className="clay-form-submit-row">
+            <button
+              type="submit"
+              className="clay-btn clay-btn-primary clay-btn-submit"
+              disabled={isLoading || (inputType === 'audio' && !audioFile) || (inputType === 'image' && !selectedFile)}
+            >
+              <Sparkles size={19} />
+              <span>{isLoading ? 'Verifying with EeraFact...' : 'Verify Claim with EeraFact AI'}</span>
+              <ArrowRight size={18} />
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
-
